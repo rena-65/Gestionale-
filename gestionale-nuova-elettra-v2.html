@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Nuova Elettra – Gestionale</title>
+<style>
+:root{--blu:#0d1b2a;--blu2:#1b2d3e;--blu3:#243447;--giallo:#f5c518;--verde:#27ae60;--rosso:#e74c3c;--arancio:#e67e22;--grigio:#7f8c8d;--bianco:#ecf0f1;--accent:#2980b9;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{background:var(--blu);color:var(--bianco);font-family:system-ui,-apple-system,sans-serif;font-size:14px;min-height:100vh;}
+/* LAYOUT */
+#app{display:flex;min-height:100vh;}
+#sidebar{width:200px;background:var(--blu2);border-right:2px solid var(--giallo);position:fixed;top:0;left:0;bottom:0;overflow-y:auto;z-index:100;transition:transform .3s;}
+#sidebar.hidden{transform:translateX(-210px);}
+#main{margin-left:200px;flex:1;display:flex;flex-direction:column;min-height:100vh;}
+@media(max-width:700px){#sidebar{transform:translateX(-210px);}#sidebar.open{transform:translateX(0);}#main{margin-left:0;}}
+/* SIDEBAR */
+.logo{padding:16px;border-bottom:1px solid var(--blu3);}
+.logo-n{font-size:1rem;font-weight:800;color:var(--giallo);text-transform:uppercase;}
+.logo-s{font-size:.65rem;color:var(--grigio);}
+.sync{display:flex;align-items:center;gap:6px;padding:6px 16px;font-size:.65rem;color:var(--grigio);}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--grigio);}
+.dot.ok{background:var(--verde);}
+.dot.sync{background:var(--arancio);animation:pulse 1s infinite;}
+.dot.err{background:var(--rosso);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.nsec{font-size:.58rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--grigio);padding:10px 16px 3px;}
+.ni{display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:.8rem;color:var(--grigio);border-left:3px solid transparent;transition:all .15s;position:relative;}
+.ni:hover{background:var(--blu3);color:var(--bianco);}
+.ni.active{background:var(--blu3);color:var(--giallo);border-left-color:var(--giallo);}
+.ni .badge{background:var(--rosso);color:#fff;border-radius:50%;width:16px;height:16px;font-size:.55rem;font-weight:700;display:flex;align-items:center;justify-content:center;margin-left:auto;}
+.sfoot{padding:12px 16px;border-top:1px solid var(--blu3);font-size:.62rem;color:var(--grigio);margin-top:auto;}
+/* TOPBAR */
+#topbar{background:var(--blu2);border-bottom:1px solid var(--blu3);padding:0 20px;height:50px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+#topbar h1{font-size:1.1rem;font-weight:700;color:var(--bianco);}
+#menu-btn{background:none;border:none;color:var(--bianco);font-size:1.3rem;cursor:pointer;padding:4px 8px;display:none;}
+@media(max-width:700px){#menu-btn{display:block;}}
+.tdate{font-size:.7rem;color:var(--grigio);background:var(--blu3);padding:3px 10px;border-radius:4px;}
+/* CONTENT */
+#content{flex:1;padding:20px;}
+.panel{display:none;}
+.panel.active{display:block;}
+/* CARDS */
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+@media(max-width:700px){.cards{grid-template-columns:1fr 1fr;}}
+.card{background:var(--blu2);border:1px solid var(--blu3);border-radius:8px;padding:16px;position:relative;overflow:hidden;}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--giallo);}
+.card.v::before{background:var(--verde);}
+.card.r::before{background:var(--rosso);}
+.card.a::before{background:var(--accent);}
+.clabel{font-size:.65rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--grigio);margin-bottom:6px;}
+.cval{font-size:1.6rem;font-weight:800;color:var(--bianco);}
+.csub{font-size:.68rem;color:var(--grigio);margin-top:3px;}
+/* SECTION HEADER */
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+.st{font-size:1rem;font-weight:700;text-transform:uppercase;color:var(--giallo);letter-spacing:1px;}
+/* BUTTONS */
+.btn{padding:6px 14px;border:none;border-radius:5px;cursor:pointer;font-size:.78rem;font-weight:600;display:inline-flex;align-items:center;gap:5px;transition:opacity .15s;}
+.btn:hover{opacity:.85;}
+.bp{background:var(--giallo);color:var(--blu);}
+.bs{background:var(--blu3);color:var(--bianco);}
+.bv{background:var(--verde);color:#fff;}
+.br{background:var(--rosso);color:#fff;}
+.ba{background:var(--accent);color:#fff;}
+.btn-sm{padding:3px 8px;font-size:.7rem;}
+/* TABLE */
+.tw{background:var(--blu2);border:1px solid var(--blu3);border-radius:8px;overflow:hidden;overflow-x:auto;margin-bottom:16px;}
+table{width:100%;border-collapse:collapse;min-width:500px;}
+th{background:var(--blu3);font-size:.62rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--grigio);padding:9px 12px;text-align:left;white-space:nowrap;}
+td{padding:9px 12px;font-size:.8rem;border-bottom:1px solid var(--blu3);color:var(--bianco);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,.02);}
+.acts{display:flex;gap:4px;flex-wrap:wrap;}
+/* BADGES */
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.62rem;font-weight:700;text-transform:uppercase;}
+.bg{background:rgba(39,174,96,.2);color:var(--verde);}
+.br2{background:rgba(231,76,60,.2);color:var(--rosso);}
+.bo{background:rgba(230,126,34,.2);color:var(--arancio);}
+.ba2{background:rgba(41,128,185,.2);color:var(--accent);}
+/* MODAL */
+.mb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:999;align-items:center;justify-content:center;padding:12px;}
+.mb.open{display:flex;}
+.mo{background:var(--blu2);border:1px solid var(--blu3);border-radius:10px;width:560px;max-width:100%;max-height:92vh;overflow-y:auto;}
+.mh{padding:16px 20px 12px;border-bottom:1px solid var(--blu3);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--blu2);z-index:2;}
+.mt{font-size:1rem;font-weight:700;text-transform:uppercase;color:var(--giallo);}
+.mc{background:none;border:none;color:var(--grigio);font-size:1.2rem;cursor:pointer;padding:2px 8px;}
+.mbo{padding:18px 20px;}
+.mf{padding:12px 20px;border-top:1px solid var(--blu3);display:flex;gap:8px;justify-content:flex-end;position:sticky;bottom:0;background:var(--blu2);}
+/* FORM */
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:500px){.fg{grid-template-columns:1fr;}}
+.f{display:flex;flex-direction:column;gap:4px;}
+.f.full{grid-column:1/-1;}
+label{font-size:.65rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--grigio);}
+input,select,textarea{background:var(--blu3);border:1px solid #2c4060;border-radius:5px;padding:7px 10px;color:var(--bianco);font-family:inherit;font-size:.82rem;outline:none;transition:border .15s;width:100%;}
+input:focus,select:focus,textarea:focus{border-color:var(--giallo);}
+textarea{resize:vertical;min-height:65px;}
+select option{background:var(--blu2);}
+input[readonly]{background:#1a2d3e;cursor:default;}
+/* ALERT */
+.alert{padding:9px 13px;border-radius:6px;font-size:.78rem;margin-bottom:12px;}
+.ai{background:rgba(41,128,185,.1);border:1px solid rgba(41,128,185,.3);color:var(--accent);}
+/* RIQUADRO */
+.riq{background:var(--blu3);border-radius:6px;padding:12px;margin-bottom:12px;}
+.riq-title{font-size:.65rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;}
+/* INTERVENTO BOX */
+.rib{background:var(--blu2);border:1px solid var(--blu3);border-radius:8px;padding:16px;margin-bottom:12px;}
+.rin{font-size:1rem;font-weight:700;color:var(--giallo);}
+.ricl{font-size:.85rem;margin:3px 0;}
+.rimeta{display:flex;gap:14px;flex-wrap:wrap;font-size:.75rem;margin:8px 0;}
+/* LOADING */
+#loading{position:fixed;inset:0;background:var(--blu);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
+.spin{width:36px;height:36px;border:3px solid var(--blu3);border-top-color:var(--giallo);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ltxt{font-size:.9rem;color:var(--grigio);letter-spacing:2px;}
+/* TOTALE BOX */
+.totbox{background:#1a2d3e;border-radius:6px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;margin-top:8px;}
+.totval{font-size:1.3rem;font-weight:800;color:var(--giallo);}
+/* MAT ROW */
+.matr{display:grid;grid-template-columns:3fr 1fr 1fr auto;gap:6px;align-items:center;background:var(--blu3);padding:8px;border-radius:6px;margin-bottom:6px;}
+/* OVERLAY mobile */
+#overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99;}
+</style>
+</head>
+<body>
+<div id="loading"><div class="spin"></div><div class="ltxt">CARICAMENTO...</div></div>
+<div id="overlay" onclick="chiudiMenu()"></div>
+
+<div id="app">
+<div id="sidebar">
+  <div class="logo">
+    <div class="logo-n">⚡ Nuova Elettra</div>
+    <div class="logo-s">di Verlotta Renato</div>
+    <div class="logo-s" style="margin-top:4px;color:var(--giallo);font-size:.6rem;">☁ GESTIONALE CLOUD</div>
+  </div>
+  <div class="sync"><div class="dot" id="sdot"></div><span id="slbl">Connessione...</span></div>
+  <nav>
+    <div class="nsec">Generale</div>
+    <div class="ni active" onclick="goTo('dashboard')">🏠 Dashboard</div>
+    <div class="nsec">Operativo</div>
+    <div class="ni" onclick="goTo('clienti')">👥 Clienti</div>
+    <div class="ni" onclick="goTo('fornitori')">🏭 Fornitori</div>
+    <div class="ni" onclick="goTo('interventi')">📋 Interventi</div>
+    <div class="ni" onclick="goTo('preventivi')">📄 Preventivi</div>
+    <div class="ni" onclick="goTo('fatture')">🧾 Fatture</div>
+    <div class="nsec">Documenti</div>
+    <div class="ni" onclick="goTo('solleciti')">📬 Solleciti</div>
+    <div class="ni" onclick="goTo('ddt')">🚚 DDT</div>
+    <div class="nsec">Contabilità</div>
+    <div class="ni" onclick="goTo('entrate')">💰 Entrate</div>
+    <div class="ni" onclick="goTo('spese')">💸 Spese</div>
+    <div class="ni" onclick="goTo('primanota')">📒 Prima Nota</div>
+    <div class="ni" id="nav-scad" onclick="goTo('scadenzario')">⏰ Scadenzario</div>
+    <div class="nsec">Magazzino</div>
+    <div class="ni" onclick="goTo('magazzino')">📦 Magazzino</div>
+    <div class="nsec">Sistema</div>
+    <div class="ni" onclick="goTo('importexport')">🔄 Import/Export</div>
+    <div class="ni" onclick="goTo('impostazioni')">⚙️ Impostazioni</div>
+  </nav>
+  <div class="sfoot">P.IVA 06011580658<br>REA SA-490482</div>
+</div>
+
+<div id="main">
+  <div id="topbar">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button id="menu-btn" onclick="toggleMenu()">☰</button>
+      <h1 id="ptitle">Dashboard</h1>
+    </div>
+    <div class="tdate" id="tdate"></div>
+  </div>
+  <div id="content">
+
+  <!-- DASHBOARD -->
+  <div id="panel-dashboard" class="panel active">
+    <div class="cards">
+      <div class="card"><div class="clabel">Clienti</div><div class="cval" id="s-cli">0</div></div>
+      <div class="card v"><div class="clabel">Fatturato Mese</div><div class="cval" id="s-fat">€0</div></div>
+      <div class="card r"><div class="clabel">Spese Mese</div><div class="cval" id="s-sp">€0</div></div>
+      <div class="card a"><div class="clabel">Interventi</div><div class="cval" id="s-int">0</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+      <div>
+        <div class="sh"><div class="st">Ultimi Interventi</div></div>
+        <div class="tw"><table><thead><tr><th>N°</th><th>Cliente</th><th>Data</th><th>Stato</th></tr></thead><tbody id="d-int"></tbody></table></div>
+      </div>
+      <div>
+        <div class="sh"><div class="st">Ultime Fatture</div></div>
+        <div class="tw"><table><thead><tr><th>N°</th><th>Cliente</th><th>Totale</th><th>Stato</th></tr></thead><tbody id="d-fat"></tbody></table></div>
+      </div>
+    </div>
+    <div class="cards" style="grid-template-columns:1fr 1fr 1fr;">
+      <div class="card v"><div class="clabel">Entrate Mese</div><div class="cval" id="d-en">€0</div></div>
+      <div class="card r"><div class="clabel">Uscite Mese</div><div class="cval" id="d-usc">€0</div></div>
+      <div class="card"><div class="clabel">Saldo</div><div class="cval" id="d-sal">€0</div></div>
+    </div>
+  </div>
+
+  <!-- CLIENTI -->
+  <div id="panel-clienti" class="panel">
+    <div class="sh"><div class="st">Clienti</div><button class="btn bp" onclick="openM('m-cliente')">+ Nuovo</button></div>
+    <div class="tw"><table><thead><tr><th>Nome</th><th>P.IVA/CF</th><th>Telefono</th><th>Email</th><th>Città</th><th>Azioni</th></tr></thead><tbody id="tb-cli"></tbody></table></div>
+  </div>
+
+  <!-- FORNITORI -->
+  <div id="panel-fornitori" class="panel">
+    <div class="sh"><div class="st">Fornitori</div><button class="btn bp" onclick="openM('m-forn')">+ Nuovo</button></div>
+    <div class="tw"><table><thead><tr><th>Nome</th><th>P.IVA</th><th>Telefono</th><th>Categoria</th><th>Azioni</th></tr></thead><tbody id="tb-forn"></tbody></table></div>
+  </div>
+
+  <!-- INTERVENTI -->
+  <div id="panel-interventi" class="panel">
+    <div class="sh"><div class="st">Rapporti Intervento</div><button class="btn bp" onclick="openM('m-int')">+ Nuovo</button></div>
+    <div id="lista-int"></div>
+  </div>
+
+  <!-- PREVENTIVI -->
+  <div id="panel-preventivi" class="panel">
+    <div class="sh"><div class="st">Preventivi</div><button class="btn bp" onclick="openM('m-prev')">+ Nuovo</button></div>
+    <div class="tw"><table><thead><tr><th>N°</th><th>Cliente</th><th>Data</th><th>Oggetto</th><th>Totale</th><th>Stato</th><th>Azioni</th></tr></thead><tbody id="tb-prev"></tbody></table></div>
+  </div>
+
+  <!-- FATTURE -->
+  <div id="panel-fatture" class="panel">
+    <div class="sh"><div class="st">Fatture</div><button class="btn bp" onclick="openM('m-fatt')">+ Nuova</button></div>
+    <div class="tw"><table><thead><tr><th>N°</th><th>Cliente</th><th>Data</th><th>Totale</th><th>Acconto</th><th>Saldo</th><th>Pagamento</th><th>Stato</th><th>Azioni</th></tr></thead><tbody id="tb-fatt"></tbody></table></div>
+  </div>
+
+  <!-- SOLLECITI -->
+  <div id="panel-solleciti" class="panel">
+    <div class="sh"><div class="st">Solleciti Pagamento</div><button class="btn bp" onclick="openM('m-sol')">+ Nuovo</button></div>
+    <div class="alert ai">📬 Genera lettere di sollecito (1°, 2°, 3° diffida) da stampare o inviare via WhatsApp.</div>
+    <div class="tw"><table><thead><tr><th>Data</th><th>Cliente</th><th>Fattura</th><th>Importo</th><th>Tipo</th><th>Azioni</th></tr></thead><tbody id="tb-sol"></tbody></table></div>
+  </div>
+
+  <!-- DDT -->
+  <div id="panel-ddt" class="panel">
+    <div class="sh"><div class="st">DDT – Documenti di Trasporto</div><button class="btn bp" onclick="openM('m-ddt')">+ Nuovo</button></div>
+    <div class="tw"><table><thead><tr><th>N°</th><th>Data</th><th>Cliente</th><th>Causale</th><th>Colli</th><th>Stato</th><th>Azioni</th></tr></thead><tbody id="tb-ddt"></tbody></table></div>
+  </div>
+
+  <!-- ENTRATE -->
+  <div id="panel-entrate" class="panel">
+    <div class="sh"><div class="st">Entrate</div><button class="btn bp" onclick="openM('m-entr')">+ Nuova</button></div>
+    <div class="tw"><table><thead><tr><th>Data</th><th>Descrizione</th><th>Categoria</th><th>Importo</th><th>Azioni</th></tr></thead><tbody id="tb-entr"></tbody></table></div>
+  </div>
+
+  <!-- SPESE -->
+  <div id="panel-spese" class="panel">
+    <div class="sh"><div class="st">Spese</div><button class="btn bp" onclick="openM('m-spesa')">+ Nuova</button></div>
+    <div class="tw"><table><thead><tr><th>Data</th><th>Descrizione</th><th>Categoria</th><th>Importo</th><th>Azioni</th></tr></thead><tbody id="tb-spesa"></tbody></table></div>
+  </div>
+
+  <!-- PRIMA NOTA -->
+  <div id="panel-primanota" class="panel">
+    <div class="sh">
+      <div class="st">Prima Nota</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <input type="month" id="pn-mese" style="padding:5px 8px;font-size:.75rem;" onchange="renderPN()">
+        <button class="btn bs btn-sm" onclick="exportPN()">⬇ CSV</button>
+        <button class="btn bp" onclick="openM('m-pn')">+ Nuova</button>
+      </div>
+    </div>
+    <div class="cards" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:14px;">
+      <div class="card v"><div class="clabel">Dare (Entrate)</div><div class="cval" id="pn-dare">€0</div></div>
+      <div class="card r"><div class="clabel">Avere (Uscite)</div><div class="cval" id="pn-avere">€0</div></div>
+      <div class="card"><div class="clabel">Saldo</div><div class="cval" id="pn-saldo">€0</div></div>
+    </div>
+    <div class="tw"><table><thead><tr><th>Data</th><th>Descrizione</th><th>Conto</th><th>Causale</th><th>Dare</th><th>Avere</th><th>Saldo Prog.</th><th>Azioni</th></tr></thead><tbody id="tb-pn"></tbody></table></div>
+  </div>
+
+  <!-- SCADENZARIO -->
+  <div id="panel-scadenzario" class="panel">
+    <div class="sh"><div class="st">Scadenzario Pagamenti</div><button class="btn bp" onclick="openM('m-scad')">+ Nuova</button></div>
+    <div class="cards" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:14px;">
+      <div class="card r"><div class="clabel">Scadute</div><div class="cval" id="sc-sc">0</div></div>
+      <div class="card"><div class="clabel">Entro 7gg</div><div class="cval" id="sc-7">0</div></div>
+      <div class="card v"><div class="clabel">Pagate (mese)</div><div class="cval" id="sc-ok">0</div></div>
+    </div>
+    <div class="tw"><table><thead><tr><th>Descrizione</th><th>Tipo</th><th>Importo</th><th>Scadenza</th><th>Giorni</th><th>Metodo</th><th>Stato</th><th>Azioni</th></tr></thead><tbody id="tb-scad"></tbody></table></div>
+  </div>
+
+  <!-- MAGAZZINO -->
+  <div id="panel-magazzino" class="panel">
+    <div class="sh"><div class="st">Magazzino</div><button class="btn bp" onclick="openM('m-mag')">+ Articolo</button></div>
+    <div class="tw"><table><thead><tr><th>Cod.</th><th>Descrizione</th><th>Cat.</th><th>Qtà</th><th>U.M.</th><th>P.Acq.Netto</th><th>IVA</th><th>P.Acq.Lordo</th><th>Ricarico</th><th>P.Vendita</th><th>Margine</th><th>Azioni</th></tr></thead><tbody id="tb-mag"></tbody></table></div>
+  </div>
+
+  <!-- IMPORT/EXPORT -->
+  <div id="panel-importexport" class="panel">
+    <div class="sh"><div class="st">Import / Export</div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="riq">
+        <div class="riq-title" style="color:var(--verde);">⬇ Export</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <button class="btn bv" onclick="expAll()">📊 Tutto in CSV</button>
+          <button class="btn bs" onclick="expJSON()">💾 Backup JSON</button>
+          <button class="btn bs" onclick="expClienti()">👥 Clienti CSV</button>
+          <button class="btn bs" onclick="expFatture()">🧾 Fatture CSV</button>
+        </div>
+      </div>
+      <div class="riq">
+        <div class="riq-title" style="color:var(--accent);">⬆ Import</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <label class="btn ba" style="cursor:pointer;">📁 Ripristina JSON<input type="file" accept=".json" style="display:none;" onchange="impJSON(this)"></label>
+          <label class="btn bs" style="cursor:pointer;">👥 Clienti CSV<input type="file" accept=".csv" style="display:none;" onchange="impClientiCSV(this)"></label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMPOSTAZIONI -->
+  <div id="panel-impostazioni" class="panel">
+    <div class="sh"><div class="st">Impostazioni Impresa</div></div>
+    <div class="riq" style="max-width:580px;">
+      <div class="fg">
+        <div class="f full"><label>Ragione Sociale</label><input id="imp-rag" value="Nuova Elettra di Verlotta Renato"></div>
+        <div class="f full"><label>Titolare</label><input id="imp-tit" value="Verlotta Renato"></div>
+        <div class="f"><label>Partita IVA</label><input id="imp-piva" value="06011580658"></div>
+        <div class="f"><label>Codice Fiscale</label><input id="imp-cf" value="VRLRNT65C18C069G"></div>
+        <div class="f full"><label>Indirizzo</label><input id="imp-addr" value="Contrada Cosentini I 54"></div>
+        <div class="f"><label>CAP</label><input id="imp-cap" value="84020"></div>
+        <div class="f"><label>Città</label><input id="imp-cit" value="Castelcivita (SA)"></div>
+        <div class="f"><label>Telefono</label><input id="imp-tel" value="347 0653520"></div>
+        <div class="f"><label>Email</label><input id="imp-email" value="renatoverlotta@virgilio.it"></div>
+        <div class="f"><label>PEC</label><input id="imp-pec" value="verlottarenato@pec.it"></div>
+        <div class="f"><label>REA</label><input id="imp-rea" value="SA - 490482"></div>
+        <div class="f"><label>Regime IVA</label>
+          <select id="imp-reg"><option value="forfettario">Forfettario</option><option value="ordinario">Ordinario</option></select>
+        </div>
+        <div class="f"><label>Tariffa Oraria Default (€)</label><input id="imp-tariffa" type="number" value="30" min="0" step="0.5"></div>
+        <div class="f full"><label>Note su Documenti</label><textarea id="imp-note"></textarea></div>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:8px;align-items:center;">
+        <button class="btn bp" onclick="salvaImp()">💾 Salva</button>
+        <span id="imp-ok" style="color:var(--verde);font-size:.8rem;display:none;">✔ Salvato!</span>
+      </div>
+    </div>
+  </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ===== MODALS ===== -->
+
+<!-- CLIENTE -->
+<div class="mb" id="m-cliente"><div class="mo">
+  <div class="mh"><div class="mt" id="mt-cli">Nuovo Cliente</div><button class="mc" onclick="closeM('m-cliente')">✕</button></div>
+  <div class="mbo"><div class="fg">
+    <div class="f full"><label>Ragione Sociale *</label><input id="cl-n"></div>
+    <div class="f"><label>CF / P.IVA</label><input id="cl-p"></div>
+    <div class="f"><label>Telefono</label><input id="cl-t"></div>
+    <div class="f"><label>Email</label><input id="cl-e" type="email"></div>
+    <div class="f full"><label>Indirizzo</label><input id="cl-i"></div>
+    <div class="f"><label>Città</label><input id="cl-c"></div>
+    <div class="f"><label>CAP</label><input id="cl-z"></div>
+    <div class="f full"><label>Note</label><textarea id="cl-note"></textarea></div>
+  </div></div>
+  <div class="mf"><button class="btn bs" onclick="closeM('m-cliente')">Annulla</button><button class="btn bp" onclick="salvaCliente()">Salva</button></div>
+</div></div>
+
+<!-- FORNITORE -->
+<div class="mb" id="m-forn"><div class="mo">
+  <div class="mh"><div class="mt">Nuovo Fornitore</div><button class="mc" onclick="closeM('m-forn')">✕</button></div>
+  <div class="mbo"><div class="fg">
+    <div class="f full"><label>Ragione Sociale *</label><input id="fo-n"></div>
+    <div class="f"><label>P.IVA / CF</label><input id="fo-p"></div>
+    <div class="f"><label>Telefono</label><input id="fo-t"></div>
+    <div class="f"><label>Email</label><input id="fo-e" type="email"></div>
+    <div class="f"><label>Città</label><input id="fo-c"></div>
+    <div class="f"><label>Categoria</label>
+      <select id="fo-cat"><option>Materiale Elettrico</option><option>Materiale Idraulico</option><option>Attrezzature</option><option>Forniture</option><option>Servizi</option><option>Altro</option></select>
+    </div>
+    <div class="f full"><label>Note</label><textarea id="fo-note"></textarea></div>
+  </div></div>
+  <div class="mf"><button class="btn bs" onclick="closeM('m-forn')">Annulla</button><button class="btn bp" onclick="salvaForn()">Salva</button></div>
+</div></div>
+
+<!-- INTERVENTO -->
+<div class="mb" id="m-int"><div class="mo" style="width:640px;">
+  <div class="mh"><div class="mt" id="mt-int">Rapporto di Intervento</div><button class="mc" onclick="closeM('m-int')">✕</button></div>
+  <div class="mbo"><div class="fg">
+    <div class="f"><label>Data *</label><input id="ri-data" type="date"></div>
+    <div class="f"><label>Cliente</label><select id="ri-cli"><option value="">-- Seleziona --</option></select></div>
+    <div class="f full"><label>Indirizzo Intervento</label><input id="ri-addr"></div>
+    <div class="f full"><label>Tipo Impianto</label>
+      <select id="ri-tipo">
+        <option>Impianto Elettrico</option>
+        <option>Impianto Idraulico / Sanitario</option>
+        <option>Impianto Elettrico e Idraulico</option>
+        <option>Impianto di Illuminazione</option>
+        <option>Fotovoltaico</option>
+        <option>Automazione (porte/cancelli)</option>
+        <option>Tinteggiatura / Vetri</option>
+        <option>Manutenzione</option>
+        <option>Altro</option>
+      </select>
+    </div>
+    <div class="f full"><label>Descrizione Lavori *</label><textarea id="ri-desc" style="min-height:80px;"></textarea></div>
+    <!-- MATERIALI -->
+    <div class="f full">
+      <label>Materiali</label>
+      <div id="ri-mat-rows"></div>
+      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+        <button type="button" class="btn bs btn-sm" onclick="addMatRow('ri')">📦 Da Magazzino</button>
+        <button type="button" class="btn bs btn-sm" onclick="scanCode('ri')">📷 Scansiona</button>
+      </div>
+      <textarea id="ri-mat-note" style="margin-top:8px;min-height:50px;" placeholder="Note materiali aggiuntivi..."></textarea>
+    </div>
+    <!-- ORE E MANODOPERA -->
+    <div class="riq full" style="grid-column:1/-1;">
+      <div class="riq-title" style="color:var(--accent);">⏱ Ore e Costi</div>
+      <div class="fg">
+        <div class="f"><label>Ore Lavorate</label><input id="ri-ore" type="number" min="0" step=".5" placeholder="0" oninput="calcMano()"></div>
+        <div class="f"><label>Tariffa €/ora</label><input id="ri-tariffa" type="number" min="0" step=".5" placeholder="30" oninput="calcMano()"></div>
+        <div class="f"><label>Manodopera (€)</label><input id="ri-mano" type="number" min="0" step=".01" style="color:var(--accent);font-weight:700;" oninput="calcTotInt()"></div>
+        <div class="f"><label>Costo Materiali (€)</label><input id="ri-matcost" type="number" min="0" step=".01" readonly style="color:var(--giallo);font-weight:700;"></div>
+      </div>
+      <div class="totbox"><span style="font-size:.8rem;color:var(--grigio);">TOTALE INTERVENTO</span><span class="totval" id="ri-tot">€ 0,00</span></div>
+    </div>
+    <div class="f"><label>Stato</label>
+      <select id="ri-stato"><option>Completato</option><option>In corso</option><option>Da fatturare</option></select>
+    </div>
+    <div class="f"><label>Firma Cliente</label><input id="ri-firma" placeholder="Nome e cognome"></div>
+    <div class="f full"><label>Note</label><textarea id="ri-note"></textarea></div>
+  </div></div>
+  <div class="mf"><button class="btn bs" onclick="closeM('m-int')">Annulla</button><button class="btn bp" onclick="salvaInt()">💾 Salva</button></div>
+</div></div>
+
+<!-- PREVENTIVO -->
+<div class="mb" id="m-prev"><div class="mo">
+  <div class="mh"><div class="mt">Nuovo Preventivo</div><button class="mc" onclick="closeM('m-prev')">✕</button></div>
+  <div class="mbo"><div class="fg">
+    <div class="f"><label>Data *</label><input id="pr-data" type="date"></div>
+    <div class="f"><label>Validità (gg)</label><input id="pr-val" type="number" value="30"></div>
+    <div class="f full"><label>Cliente</label><select id="pr-cli"><option value="">-- Seleziona --</option></select></div>
+    <div class="f full"><label>Oggetto *</label><input id="pr-ogg"></div>
+    <div class="f full"><label>Descrizione</label><textarea id="pr-desc"></textarea></div>
+    <div class="f"><label>Importo Netto (€)</label><input id="pr-imp" type="number" min="0" step=".01" placeholder="0.00" oninput="calcPrev()"></div>
+    <div class="f"><label>IVA %</label>
+      <select id="pr-iva" onchange="calcPrev()"><option value="22">22%</option><option value="10">10%</option><option value="4">4%</option><option value="0">Esente/Forfettario</option></select>
+    </div>
+    <div class="f"><label>Totale (€)</label><input id="pr-tot" readonly style="color:var(--giallo);font-weight:700;font-size:1rem;"></div>
+    <div class="f"><label>Stato</label>
+      <select id="pr-stato"><option>In attesa</option><option>Accettato</option><option>Rifiutato</option></select>
+    </div>
+    <div class="f full"><label>Note</label><textarea id="pr-note"></textarea></div>
+  </div></div>
+  <div class="mf"><button class="btn bs" onclick="closeM('m-prev')">Annulla</button><button class="btn bp" onclick="salvaPrev()">Salva</button></div>
+</div></div>
+
+<!-- FATTURA -->
+<div class="mb" id="m-fatt"><div class="mo">
+  <div class="mh"><div class="mt">Nuova Fattura</div><button class="mc" onclick="closeM('m-fatt')">✕</button></div>
+  <div class="mbo"><div class="fg">
+    <div class="f"><label>Data *</label><input id="fa-data" type="date"></div>
+    <div class="f"><label>Scadenza</label><input id="fa-scad" type="date"></div>
+    <div class="f full"><label>Cliente</label><select id="fa-cli"><option value="">-- Seleziona --</option></select></div>
+    <div class="f full"><label>Descrizione *</label><textarea id="fa-desc"></textarea></div>
+    <div class="f"><label>Imponibile (€)</label><input id="fa-imp" type="number" min="0" step=".01" placeholder="0.00" oninput="calcFatt()"></div>
+    <div class="f"><label>IVA %</label>
+      <select id="fa-iva" onchange="calcFatt()"><option value="22">22%</option><option value="10">10%</option><option value="4">4%</option><option value="0">Esente/Forfettario</option></select>
+    </div>
+    <div class="f"><label>Totale (€)</label><input id="fa-tot" readonly style="color:var(--giallo);font-weight:700;font-size:1rem;"></div>
+    <div class="f"><label>Metodo Pagamento</label>
+      <select id="fa-met"><option>Bonifico Bancario</option><option>Contanti</option><option>Assegno</option><option>Carta</option><option>RID/SDD</option><option>PayPal</option></select>
+    </div>
+    <div class="f"><label>Acconto Ricevuto (€)</label><input id="fa-acc" type="number" min="0" step=".01" placeholder="0.00" oninput="calcFatt()" style="color:var(--arancio);"></div>
+    <div class="f"><label>Saldo Residuo (€)</label><input id="fa-sal" readonly style="color:var(--rosso);font-weight:700;font-size:1rem;"></div>
+    <div class="f"><label>Stato</label>
+      <select id="fa-stato"><option>Non pagata</option><option>Pagata parzialmente</option><option>Pagata</option></select>
+    </div>
+    <div class="f full"><label>Note</label><textarea id="fa-note"></textarea></div>
+  </div></div>
+  <div class="mf"><button class="btn bs" onclick="closeM('m-fatt')">Annulla</button><button class="btn bp" onclick="salvaFatt()">Salva</button></div>
+</div></div>
+
+<!-- SOLLECITO -->
+<div class="mb" id="m-sol"><div class="mo">
+  <div class="mh"><div class="mt">Nuovo Sollecito</div><button class="mc" onclick="closeM('m-sol')">✕</button></div>
+  <div class="mbo"><div class="fg">
+    <div class="f"><label>Data *</label><input id="so-data" type="date"></div>
+    <div class="f"><label>Tipo</label>
+      <select id="so-tipo"><option value="1">1° Sollecito (bonario)</option><option value="2">2° Sollecito (formale)</option><option value="3">3° Diffida (legale)</option></select>
+    </div>
+    <div class="f full"><label>Cliente *</label><select id="so-cli"><option value="">-- Seleziona --</option></select></div>
+    <div class="f"><label>N° Fattura Riferimento</label><input id="so-fatt" placeholder="Es. FAT-0001"></div>
+    <div class="f"><label>Data Fattura</label><input id="so-dfatt" type="date"></div>
+    <div class="f"><label>Importo Dovuto (€) *</label><input id="so-imp" type="number" min="0" step=".01" placeholder="0.00"></div>
+    <div class="f"><label>Scadenza Originale</label><input id="so-scad" type="date" onchange="calcGiorni()"></div>
+    <div class="f"><label>Giorni di Ritardo</label><input id="so-giorni" readonly style="color:var(--arancio);font-weight:700;"></div>
+    <div class="f full"><label>Note Aggiuntive</label><textarea id="so-note"></textarea></div>
+  </div></div>
+  <div class="mf"><button class="btn bs" onclick="closeM('m-sol')">Annulla</button><button class="btn bp" onclick="salvaSol()">💾 Salva e Stampa</button></div>
+</div></div>
+
+<!-- DDT -->
+<div class="mb" id="m-ddt"><div class="mo" style="width:640px;">
+  <div class="mh"><div class="mt">Nuovo DDT</div><button class="mc" onclick="closeM('m-ddt')">✕</button></div>
+  <div class="mbo"><div class="fg">
+    <div class="f"><label>Data *</label><input id="dd-data" type="date"></div>
+    <div class="f"><label>Causale</label>
+      <select id="dd-caus"><option>Vendita</option><option>Prestazione servizi</option><option>Reso</option><option>Omaggio</option><option>Conto lavorazione</option><option>Altro</option></select>
+    </div>
+    <div class="f full"><label>Cliente *</label><select id="dd-cli"><option value="">-- Seleziona --</option></select></div>
+    <div class="f full"><label>Destinazione (se diversa)</label><input id="dd-dest"></div>
+    <div class="f"><label>Colli</label><input id="dd-colli" type="number" min="0" value="1"></div>
+    <div class="f"><label>Peso (kg)</label><input id="dd-peso" type="number" min="0" step=".1" placeholder="0"></div>
+    <div class="f"><label>Vettore</label><input id="dd-vett" placeholder="Es. Corriere SDA"></div>
+    <div class="f"><label>Aspetto Beni</label>
+      <select id="dd-asp"><option>Scatola</option><option>Pallet</option><option>Busta</option><option>Materiale sfuso</option><option>Imballato</option></select>
+    </div>
+    <div class="f full"><label>Descrizione Merce / Materiali</label><textarea id="dd-desc" placeholder="Elenco materiali trasportati..."></textarea></div>
+    <div class="f"><label>Ora Trasporto</label><input id="dd-ora" type="time"></div>
+    <div class="f"><label>Stato</label>
+      <select id="dd-stato"><option>Da spedire</option><option>In transito</option><option>Consegnato</option><option>Annullato</option></select>
+    </div>
+    <div class="f full"><label>Note</label><textarea id="dd-note"></textarea></div>
+  </div></div>
+  <div class="mf"><button class="btn bs" onclick="closeM('m-ddt')">Annulla</button><button class="btn bp" onclick="salvaDDT()">💾 Salva</button></div>
+</div></div>
+
+<!-- ENTRATA -->
+<div class="mb" id="m-entr"><div class="mo">
+  <div class="mh"><div class="mt">Nuova Entrata</div><button class="mc" onclick="closeM('m-entr')">✕</button></div>
+  <div class="mbo"><div class="fg">
+    <div class="f"><label>Data *</label><input id="en-data" type="date"></div>
+    <div class="f"><label>Importo (€) *</label><input id="en-imp" type="number" min="0" step=".01"></div>
+    <div class="f full"><label>Descrizione *</label><input id="en-desc"></div>
+    <div class="f"><label>Categoria</label>
+      <select id="en-cat"><option>Fattura incassata</option><option>Acconto lavori</option><option>Saldo lavori</option><option>Altro incasso</option></select>
+    </div>
+    <div class="f full"><label>Note</label><textarea id="en-note"></textarea></div>
+  </div></div>
+  <div class="mf"><button class="btn bs" onclick="closeM('m-entr')">Annulla</button><button class="btn bp" onclick="salvaEntr()">Salva</button></div>
+</div></div>
+
+<!-- SPESA -->
+<div class="mb" id="m-spesa"><div class="mo">
+  <div class="mh"><div class="mt">Nuova Spesa</div><button class="mc" onclick="closeM('m-spesa')">✕</button></div>
+  <div class="mbo"><div class="fg">
+    <div class="f"><label>Data *</label><input id="sp-data" type="date"></div>
+    <div class="f"><label>Importo (€) *</label><input id="sp-imp" type="number" min="0" step=".01"></div>
+    <div class="f full"><label>Descrizione *</label><input id="sp-desc"></div>
+    <div class="f"><label>Categoria</label>
+      <select id="sp-cat"><option>Materiali elettrici</option><option>Materiali idraulici</option><option>Attrezzature</option><option>Carburante</option><option>Telefono/Internet</option><option>Assicurazioni</option><option>Imposte/Tasse</option><option>Altro</option></select>
+    </div>
+    <div class="f full"><label>Note</label><textarea id="sp-note"></textarea></div>
+  </div></div>
+  <div class="mf"><button class="btn bs" onclick="closeM('m-spesa')">Annulla</button><button class="btn bp" onclick="salvaSpesa()">Salva</button></div>
+</div></div>
+
+<!-- PRIMA NOTA -->
+<div class="mb" id="m-pn"><div class="mo">
+  <div class="mh"><div class="mt">Prima Nota</div><button class="mc" onclick="closeM('m-pn')">✕</button></div>
+  <div class="mbo"><div class="fg">
+    <div class="f"><label>Data *</label><input id="pn-data" type="date"></div>
+    <div class="f"><label>Tipo</label>
+      <select id="pn-tipo"><option value="dare">📗 Dare (Entrata)</option><option value="avere">📕 Avere (Uscita)</option></select>
+    </div>
+    <div class="f full"><label>Descrizione *</label><input id="pn-desc"></div>
+    <div class="f"><label>Conto</label>
+      <select id="pn-conto"><option>Cassa</option><option>Banca</option><option>Crediti clienti</option><option>Debiti fornitori</option><option>IVA</option><option>Spese generali</option><option>Materiali</option><option>Altro</option></select>
+    </div>
+    <div class="f"><label>Causale</label>
+      <select id="pn-caus"><option>Incasso fattura</option><option>Pagamento fornitore</option><option>Acquisto materiali</option><option>Spesa generale</option><option>Pagamento IVA</option><option>Pagamento F24</option><option>Altro</option></select>
+    </div>
+    <div class="f"><label>Dare € (Entrata)</label><input id="pn-dare-v" type="number" min="0" step=".01" placeholder="0.00" style="color:var(--verde);"></div>
+    <div class="f"><label>Avere € (Uscita)</label><input id="pn-avere-v" type="number" min="0" step=".01" placeholder="0.00" style="color:var(--rosso);"></div>
+    <div class="f full"><label>Note</label><textarea id="pn-note"></textarea></div>
+  </div></div>
+  <div class="mf"><button class="btn bs" onclick="closeM('m-pn')">Annulla</button><button class="btn bp" onclick="salvaPN()">Salva</button></div>
+</div></div>
+
+<!-- SCADENZA -->
+<div class="mb" id="m-scad"><div class="mo">
+  <div class="mh"><div class="mt">Nuova Scadenza</div><button class="mc" onclick="closeM('m-scad')">✕</button></div>
+  <div class="mbo"><div class="fg">
+    <div class="f full"><label>Descrizione *</label><input id="sc-desc"></div>
+    <div class="f"><label>Tipo</label>
+      <select id="sc-tipo"><option value="incasso">💰 Incasso</option><option value="pagamento">💸 Pagamento</option></select>
+    </div>
+    <div class="f"><label>Importo (€) *</label><input id="sc-imp" type="number" min="0" step=".01"></div>
+    <div class="f"><label>Data Scadenza *</label><input id="sc-scad" type="date"></div>
+    <div class="f"><label>Metodo</label>
+      <select id="sc-met"><option>Bonifico</option><option>Contanti</option><option>Assegno</option><option>RID/SDD</option><option>Carta</option></select>
+    </div>
+    <div class="f"><label>Stato</label>
+      <select id="sc-stato"><option value="aperta">Da pagare</option><option value="pagata">Pagata</option></select>
+    </div>
+    <div class="f full"><label>Note</label><textarea id="sc-note"></textarea></div>
+  </div></div>
+  <div class="mf"><button class="btn bs" onclick="closeM('m-scad')">Annulla</button><button class="btn bp" onclick="salvaScad()">Salva</button></div>
+</div></div>
+
+<!-- MAGAZZINO -->
+<div class="mb" id="m-mag"><div class="mo" style="width:640px;">
+  <div class="mh"><div class="mt" id="mt-mag">Nuovo Articolo</div><button class="mc" onclick="closeM('m-mag')">✕</button></div>
+  <div class="mbo"><div class="fg">
+    <div class="f"><label>Codice</label><input id="mg-cod" placeholder="EL-001"></div>
+    <div class="f"><label>Categoria</label>
+      <select id="mg-cat"><option>Cavi e Conduttori</option><option>Quadri Elettrici</option><option>Interruttori/Prese</option><option>Tubi/Condutture</option><option>Raccordi Idraulici</option><option>Lampade/Illuminazione</option><option>Fotovoltaico</option><option>Attrezzature</option><option>Altro</option></select>
+    </div>
+    <div class="f full"><label>Descrizione *</label><input id="mg-desc" placeholder="Es. Cavo H07V-K 2.5mm²"></div>
+    <div class="f"><label>Quantità</label><input id="mg-qta" type="number" min="0" step=".1" value="0"></div>
+    <div class="f"><label>U.M.</label>
+      <select id="mg-um"><option>pz</option><option>m</option><option>kg</option><option>rotolo</option><option>conf</option><option>lt</option></select>
+    </div>
+    <!-- PREZZI -->
+    <div class="f full" style="background:var(--blu3);border-radius:6px;padding:12px;grid-column:1/-1;">
+      <div style="font-size:.65rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-bottom:10px;">💰 Prezzo Acquisto</div>
+      <div class="fg">
+        <div class="f"><label>Senza IVA (€)</label><input id="mg-netto" type="number" min="0" step=".01" placeholder="Es. 10.00" oninput="calcMagNetto()" style="color:var(--accent);"></div>
+        <div class="f"><label>IVA %</label>
+          <select id="mg-iva" onchange="calcMagNetto()"><option value="22">22%</option><option value="10">10%</option><option value="4">4%</option><option value="0">Esente</option></select>
+        </div>
+        <div class="f"><label>Con IVA (€)</label><input id="mg-lordo" type="number" min="0" step=".01" placeholder="Es. 12.20" oninput="calcMagLordo()" style="color:var(--bianco);font-weight:700;"></div>
+      </div>
+      <div style="font-size:.72rem;color:var(--grigio);margin-top:6px;">💡 Inserisci il netto e calcola il lordo, oppure il lordo e calcola il netto.</div>
+    </div>
+    <div class="f full" style="background:var(--blu3);border-radius:6px;padding:12px;grid-column:1/-1;">
+      <div style="font-size:.65rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--giallo);margin-bottom:10px;">🏷 Prezzo Vendita (Regime Forfettario)</div>
+      <div class="fg">
+        <div class="f"><label>% Ricarico su lordo</label><input id="mg-ric" type="number" min="0" step=".1" placeholder="Es. 30" oninput="calcMagVendita()"></div>
+        <div class="f"><label>Prezzo Vendita (€)</label><input id="mg-vend" type="number" min="0" step=".01" placeholder="0.00" oninput="calcMagRic()" style="color:var(--giallo);font-weight:700;"></div>
+        <div class="f"><label>Margine (€)</label><input id="mg-marg" readonly style="color:var(--verde);font-weight:700;"></div>
+      </div>
+      <div id="mg-rie" style="margin-top:8px;font-size:.75rem;color:var(--grigio);background:#1a2d3e;border-radius:4px;padding:6px 10px;"></div>
+    </div>
+    <div class="f full"><label>Note / Fornitore</label><textarea id="mg-note"></textarea></div>
+  </div></div>
+  <div class="mf"><button class="btn bs" onclick="closeM('m-mag')">Annulla</button><button class="btn bp" onclick="salvaMag()">💾 Salva</button></div>
+</div></div>
+
+<!-- SCANNER -->
+<div class="mb" id="m-scan"><div class="mo" style="width:460px;">
+  <div class="mh"><div class="mt">📷 Scansiona Codice</div><button class="mc" onclick="closeScan()">✕</button></div>
+  <div class="mbo">
+    <div style="background:#000;border-radius:8px;overflow:hidden;aspect-ratio:4/3;position:relative;margin-bottom:12px;">
+      <video id="scan-video" style="width:100%;height:100%;object-fit:cover;" playsinline autoplay></video>
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+        <div style="width:180px;height:110px;border:3px solid var(--giallo);border-radius:6px;box-shadow:0 0 0 9999px rgba(0,0,0,.45);"></div>
+      </div>
+      <div id="scan-st" style="position:absolute;bottom:8px;left:0;right:0;text-align:center;color:#fff;font-size:.75rem;background:rgba(0,0,0,.5);padding:4px;">In attesa...</div>
+    </div>
+    <div id="scan-res" style="display:none;background:var(--blu3);border-radius:6px;padding:10px;margin-bottom:10px;">
+      <div style="font-size:.65rem;color:var(--grigio);">CODICE RILEVATO</div>
+      <div id="scan-code" style="font-size:1.1rem;color:var(--giallo);font-weight:700;"></div>
+      <div id="scan-match" style="font-size:.8rem;margin-top:6px;"></div>
+    </div>
+    <div>
+      <label style="font-size:.7rem;color:var(--grigio);">INSERISCI CODICE MANUALMENTE</label>
+      <div style="display:flex;gap:6px;margin-top:4px;">
+        <input id="scan-manual" placeholder="Codice articolo..." style="flex:1;" onkeydown="if(event.key==='Enter')cercaCodice()">
+        <button class="btn ba" onclick="cercaCodice()">Cerca</button>
+      </div>
+    </div>
+  </div>
+  <div class="mf">
+    <button class="btn bs" onclick="closeScan()">Chiudi</button>
+    <button class="btn bp" id="btn-add-scan" style="display:none;" onclick="addDaScan()">+ Aggiungi</button>
+  </div>
+</div></div>
+
+<script>
+// ============ STORAGE ============
+const SK = 'ne_v3';
+const API_KEY = '$2a$10$MCOkdzPk/7ApCTJScguBX.7vlHRXjKVVgqIi/bsYpyNHe56FZDoCC';
+// BIN_ID fisso — non cambia mai tra dispositivi
+let BIN_ID = localStorage.getItem('ne_bin_id3') || null;
+let saveT = null;
+let lastSaveTime = 0;
+
+let DB = {
+  clienti:[], fornitori:[], interventi:[], preventivi:[], fatture:[],
+  solleciti:[], ddt:[], entrate:[], spese:[], primanota:[], scadenzario:[], magazzino:[],
+  nextId:{cl:1,fo:1,ri:1,pr:1,fa:1,so:1,dd:1,en:1,sp:1,pn:1,sc:1,mg:1},
+  impostazioni:{}, lastModified: 0
+};
+
+function salva() {
+  DB.lastModified = Date.now();
+  localStorage.setItem(SK, JSON.stringify(DB));
+  setSS('sync');
+  clearTimeout(saveT);
+  saveT = setTimeout(pushCloud, 1000);
+}
+
+function loadDB() {
+  const d = localStorage.getItem(SK);
+  if(d){ try{ Object.assign(DB, JSON.parse(d)); fixDB(); }catch(e){} }
+}
+
+function fixDB() {
+  ['clienti','fornitori','interventi','preventivi','fatture','solleciti','ddt',
+   'entrate','spese','primanota','scadenzario','magazzino'].forEach(k=>{ if(!DB[k]) DB[k]=[]; });
+  if(!DB.nextId) DB.nextId={};
+  ['cl','fo','ri','pr','fa','so','dd','en','sp','pn','sc','mg'].forEach(k=>{ if(!DB.nextId[k]) DB.nextId[k]=1; });
+  if(!DB.impostazioni) DB.impostazioni={};
+  if(!DB.lastModified) DB.lastModified=0;
+}
+
+async function pushCloud() {
+  try {
+    if(!BIN_ID) { await createBin(); return; }
+    const r = await fetch('https://api.jsonbin.io/v3/b/'+BIN_ID, {
+      method:'PUT',
+      headers:{'Content-Type':'application/json','X-Master-Key':API_KEY},
+      body: JSON.stringify(DB)
+    });
+    if(r.ok){ setSS('ok'); lastSaveTime=Date.now(); }
+    else if(r.status===404){ localStorage.removeItem('ne_bin_id3'); BIN_ID=null; await createBin(); }
+    else setSS('err');
+  } catch(e){ setSS('err'); }
+}
+
+async function createBin() {
+  try {
+    const r = await fetch('https://api.jsonbin.io/v3/b', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Master-Key':API_KEY,'X-Bin-Private':'true'},
+      body: JSON.stringify(DB)
+    });
+    if(r.ok){
+      const d=await r.json();
+      BIN_ID=d.metadata.id;
+      localStorage.setItem('ne_bin_id3',BIN_ID);
+      setSS('ok');
+      // Salva BIN_ID anche in un posto accessibile a tutti i dispositivi
+      console.log('BIN creato:', BIN_ID, '— SALVALO!');
+    } else setSS('err');
+  } catch(e){ setSS('err'); }
+}
+
+async function syncCloud() {
+  // Se non ho BIN_ID, prova a recuperarlo dal cloud
+  if(!BIN_ID) {
+    await createBin();
+    return;
+  }
+  try {
+    setSS('sync');
+    const r = await fetch('https://api.jsonbin.io/v3/b/'+BIN_ID+'/latest',{
+      headers:{'X-Master-Key':API_KEY}
+    });
+    if(r.ok){
+      const d = await r.json();
+      if(d.record && d.record.lastModified){
+        const cloudTime = d.record.lastModified || 0;
+        const localTime = DB.lastModified || 0;
+        // Usa sempre i dati più recenti
+        if(cloudTime > localTime){
+          Object.assign(DB, d.record);
+          fixDB();
+          localStorage.setItem(SK, JSON.stringify(DB));
+          renderAll();
+          console.log('Dati aggiornati dal cloud:', new Date(cloudTime).toLocaleTimeString());
+        }
+      } else if(d.record) {
+        // Prima sincronizzazione — prendi i dati cloud se ha più record
+        const cc=(d.record.clienti||[]).length+(d.record.fatture||[]).length+(d.record.interventi||[]).length;
+        const lc=(DB.clienti||[]).length+(DB.fatture||[]).length+(DB.interventi||[]).length;
+        if(cc > lc){
+          Object.assign(DB, d.record);
+          fixDB();
+          localStorage.setItem(SK, JSON.stringify(DB));
+          renderAll();
+        }
+      }
+      setSS('ok');
+    } else if(r.status===404){
+      localStorage.removeItem('ne_bin_id3');
+      BIN_ID=null;
+      await createBin();
+    } else setSS('err');
+  } catch(e){
+    setSS('err');
+    console.log('Errore sync:', e);
+  }
+}
+
+// Auto-sync ogni 30 secondi per tenere aggiornati tutti i dispositivi
+setInterval(syncCloud, 30000);
+
+function setSS(s){
+  const dot=document.getElementById('sdot');
+  const lbl=document.getElementById('slbl');
+  dot.className='dot '+s;
+  lbl.textContent=s==='ok'?'Sincronizzato':s==='sync'?'Salvataggio...':'Offline (locale)';
+}
+
+// ============ HELPERS ============
+function eur(n){ return '€ '+parseFloat(n||0).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
+function nC(id){ const c=DB.clienti.find(x=>x.id==id); return c?c.nome:'—'; }
+function bst(s){
+  const m={
+    'Completato':'bg','Pagata':'bg','Accettato':'bg','Consegnato':'bg',
+    'In corso':'ba2','Da fatturare':'bo','In attesa':'bo','Da spedire':'bo',
+    'Non pagata':'br2','Rifiutato':'br2','Annullato':'br2',
+    'Pagata parzialmente':'bo','In transito':'ba2'
+  };
+  return`<span class="badge ${m[s]||'ba2'}">${s}</span>`;
+}
+function gv(id){ return document.getElementById(id)?document.getElementById(id).value:''; }
+function sv(id,v){ const e=document.getElementById(id); if(e) e.value=v; }
+function clr(...ids){ ids.forEach(id=>sv(id,'')); }
+function getImp(){
+  const d=DB.impostazioni||{};
+  return {
+    ragione:d.ragione||'Nuova Elettra di Verlotta Renato',
+    titolare:d.titolare||'Verlotta Renato',
+    piva:d.piva||'06011580658',cf:d.cf||'VRLRNT65C18C069G',
+    addr:d.addr||'Contrada Cosentini I 54',cap:d.cap||'84020',
+    citta:d.citta||'Castelcivita (SA)',tel:d.tel||'347 0653520',
+    email:d.email||'renatoverlotta@virgilio.it',pec:d.pec||'verlottarenato@pec.it',
+    rea:d.rea||'SA - 490482',regime:d.regime||'forfettario',
+    tariffa:d.tariffa||30,noteDoc:d.noteDoc||''
+  };
+}
+
+// ============ NAV ============
+const TITLES={dashboard:'Dashboard',clienti:'Clienti',fornitori:'Fornitori',interventi:'Rapporti di Intervento',
+  preventivi:'Preventivi',fatture:'Fatture',solleciti:'Solleciti',ddt:'DDT',entrate:'Entrate',spese:'Spese',
+  primanota:'Prima Nota',scadenzario:'Scadenzario',magazzino:'Magazzino',importexport:'Import/Export',impostazioni:'Impostazioni'};
+
+function goTo(p){
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
+  document.getElementById('panel-'+p).classList.add('active');
+  document.querySelectorAll('.ni').forEach(x=>{ if(x.getAttribute('onclick')&&x.getAttribute('onclick').includes("'"+p+"'")) x.classList.add('active'); });
+  document.getElementById('ptitle').textContent=TITLES[p]||p;
+  chiudiMenu();
+  const renders={dashboard:renderDash,clienti:renderCli,fornitori:renderForn,
+    interventi:renderInt,preventivi:renderPrev,fatture:renderFatt,solleciti:renderSol,
+    ddt:renderDDT,entrate:renderEntr,spese:renderSpesa,primanota:renderPN,
+    scadenzario:renderScad,magazzino:renderMag,impostazioni:caricaImp};
+  if(renders[p]) renders[p]();
+}
+
+function toggleMenu(){ document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').style.display=document.getElementById('sidebar').classList.contains('open')?'block':'none'; }
+function chiudiMenu(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').style.display='none'; }
+
+// ============ MODAL ============
+function openM(id){
+  fillSelects();
+  document.getElementById(id).classList.add('open');
+  const d=new Date().toISOString().split('T')[0];
+  const inp=document.querySelector('#'+id+' input[type="date"]');
+  if(inp&&!inp.value) inp.value=d;
+}
+function closeM(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.mb').forEach(m=>m.addEventListener('click',function(e){ if(e.target===this) this.classList.remove('open'); }));
+
+function fillSelects(){
+  const co=DB.clienti.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  ['ri-cli','pr-cli','fa-cli','so-cli','dd-cli'].forEach(id=>{ const e=document.getElementById(id); if(e) e.innerHTML='<option value="">-- Seleziona --</option>'+co; });
+}
+
+// ============ CLIENTI ============
+function salvaCliente(){
+  const nome=gv('cl-n').trim(); if(!nome){alert('Inserire nome!');return;}
+  const editId=document.getElementById('m-cliente').dataset.editId;
+  const r={id:editId?parseInt(editId):DB.nextId.cl++,nome,piva:gv('cl-p'),tel:gv('cl-t'),email:gv('cl-e'),indirizzo:gv('cl-i'),citta:gv('cl-c'),cap:gv('cl-z'),note:gv('cl-note')};
+  if(editId){ const i=DB.clienti.findIndex(x=>x.id==editId); if(i>-1) DB.clienti[i]=r; delete document.getElementById('m-cliente').dataset.editId; }
+  else DB.clienti.push(r);
+  salva(); closeM('m-cliente'); clr('cl-n','cl-p','cl-t','cl-e','cl-i','cl-c','cl-z','cl-note'); renderCli();
+}
+function renderCli(){
+  const tb=document.getElementById('tb-cli');
+  if(!DB.clienti.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--grigio);padding:20px;">Nessun cliente</td></tr>';return;}
+  tb.innerHTML=DB.clienti.map(c=>`<tr><td><strong>${c.nome}</strong></td><td>${c.piva||'—'}</td><td>${c.tel||'—'}</td><td>${c.email||'—'}</td><td>${c.citta||'—'}</td><td class="acts">
+    <button class="btn bs btn-sm" onclick="editCli(${c.id})">✏️</button>
+    <button class="btn br btn-sm" onclick="delCli(${c.id})">✕</button></td></tr>`).join('');
+}
+function editCli(id){
+  const c=DB.clienti.find(x=>x.id===id);if(!c)return;
+  document.getElementById('m-cliente').dataset.editId=id;
+  sv('cl-n',c.nome);sv('cl-p',c.piva);sv('cl-t',c.tel);sv('cl-e',c.email);sv('cl-i',c.indirizzo);sv('cl-c',c.citta);sv('cl-z',c.cap);sv('cl-note',c.note);
+  openM('m-cliente');
+}
+function delCli(id){ if(confirm('Eliminare?')){ DB.clienti=DB.clienti.filter(x=>x.id!==id); salva(); renderCli(); } }
+
+// ============ FORNITORI ============
+function salvaForn(){
+  const nome=gv('fo-n').trim();if(!nome){alert('Inserire nome!');return;}
+  DB.fornitori.push({id:DB.nextId.fo++,nome,piva:gv('fo-p'),tel:gv('fo-t'),email:gv('fo-e'),citta:gv('fo-c'),cat:gv('fo-cat'),note:gv('fo-note')});
+  salva();closeM('m-forn');clr('fo-n','fo-p','fo-t','fo-e','fo-c','fo-note');renderForn();
+}
+function renderForn(){
+  const tb=document.getElementById('tb-forn');
+  if(!DB.fornitori.length){tb.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--grigio);padding:20px;">Nessun fornitore</td></tr>';return;}
+  tb.innerHTML=DB.fornitori.map(f=>`<tr><td><strong>${f.nome}</strong></td><td>${f.piva||'—'}</td><td>${f.tel||'—'}</td><td><span class="badge ba2">${f.cat}</span></td><td class="acts">
+    <button class="btn br btn-sm" onclick="delForn(${f.id})">✕</button></td></tr>`).join('');
+}
+function delForn(id){ if(confirm('Eliminare?')){ DB.fornitori=DB.fornitori.filter(x=>x.id!==id); salva(); renderForn(); } }
+
+// ============ INTERVENTI ============
+function calcMano(){
+  const ore=parseFloat(gv('ri-ore'))||0;
+  const tar=parseFloat(gv('ri-tariffa'))||0;
+  if(ore>0&&tar>0) sv('ri-mano',(ore*tar).toFixed(2));
+  calcTotInt();
+}
+function calcTotInt(){
+  const m=parseFloat(gv('ri-mano'))||0;
+  const mat=parseFloat(gv('ri-matcost'))||0;
+  const tot=m+mat;
+  document.getElementById('ri-tot').textContent=eur(tot);
+}
+
+// Mat rows
+let matRows={};
+function addMatRow(prefix){
+  if(!DB.magazzino.length){alert('Nessun articolo in magazzino!');return;}
+  const id='mr-'+prefix+'-'+Date.now();
+  const div=document.createElement('div');
+  div.className='matr';div.id=id;
+  div.innerHTML=`<select onchange="onMatSel(this,'${prefix}','${id}')" style="font-size:.75rem;">
+    <option value="">-- Articolo --</option>
+    ${DB.magazzino.map(m=>`<option value="${m.id}" data-p="${m.pvend||0}" data-u="${m.um}">${m.codice?'['+m.codice+'] ':''}${m.desc} — ${eur(m.pvend||0)}/${m.um}</option>`).join('')}
+    </select>
+    <input type="number" id="${id}-q" min="0" step=".1" value="1" style="font-size:.78rem;" oninput="updMatRow('${prefix}','${id}')">
+    <input id="${id}-t" readonly style="font-size:.78rem;background:#1a2d3e;color:var(--giallo);font-weight:700;">
+    <button onclick="remMatRow('${id}','${prefix}')" style="background:var(--rosso);border:none;color:#fff;border-radius:4px;padding:4px 7px;cursor:pointer;">✕</button>`;
+  document.getElementById(prefix+'-mat-rows').appendChild(div);
+}
+function onMatSel(sel,prefix,rowId){
+  const opt=sel.options[sel.selectedIndex];
+  const p=parseFloat(opt.dataset.p)||0;
+  const q=parseFloat(document.getElementById(rowId+'-q').value)||1;
+  document.getElementById(rowId+'-t').value=(p*q).toFixed(2);
+  updateMatTotal(prefix);
+}
+function updMatRow(prefix,rowId){
+  const sel=document.querySelector('#'+rowId+' select');
+  if(!sel)return;
+  const opt=sel.options[sel.selectedIndex];
+  const p=parseFloat(opt?opt.dataset.p:0)||0;
+  const q=parseFloat(document.getElementById(rowId+'-q').value)||1;
+  document.getElementById(rowId+'-t').value=(p*q).toFixed(2);
+  updateMatTotal(prefix);
+}
+function remMatRow(rowId,prefix){ document.getElementById(rowId).remove(); updateMatTotal(prefix); }
+function updateMatTotal(prefix){
+  const rows=document.getElementById(prefix+'-mat-rows').querySelectorAll('div[id]');
+  let tot=0;
+  rows.forEach(r=>{ const t=document.getElementById(r.id+'-t'); if(t) tot+=parseFloat(t.value)||0; });
+  if(prefix==='ri'){ sv('ri-matcost',tot.toFixed(2)); calcTotInt(); }
+}
+function getMatSummary(prefix){
+  const rows=document.getElementById(prefix+'-mat-rows').querySelectorAll('div[id]');
+  const righe=[];
+  rows.forEach(r=>{
+    const sel=r.querySelector('select');
+    if(!sel||!sel.value)return;
+    const opt=sel.options[sel.selectedIndex];
+    const art=DB.magazzino.find(x=>x.id==sel.value);
+    const q=parseFloat(document.getElementById(r.id+'-q').value)||1;
+    const p=parseFloat(opt.dataset.p)||0;
+    righe.push({desc:opt.text.split(' — ')[0],qty:q,um:opt.dataset.u,pvend:p,tot:p*q,artId:sel.value});
+  });
+  return righe;
+}
+function resetMatRows(prefix){ document.getElementById(prefix+'-mat-rows').innerHTML=''; }
+
+function salvaInt(){
+  const desc=gv('ri-desc').trim();if(!desc){alert('Inserire descrizione lavori!');return;}
+  const editId=document.getElementById('m-int').dataset.editId;
+  const ore=parseFloat(gv('ri-ore'))||0;
+  const tar=parseFloat(gv('ri-tariffa'))||0;
+  const mano=parseFloat(gv('ri-mano'))||0;
+  const matcost=parseFloat(gv('ri-matcost'))||0;
+  const righe=getMatSummary('ri');
+  const rec={
+    data:gv('ri-data'),clienteId:gv('ri-cli'),indirizzo:gv('ri-addr'),
+    tipo:gv('ri-tipo'),desc,matNote:gv('ri-mat-note'),matRighe:righe,
+    ore,tariffa:tar,manodopera:mano,costoMat:matcost,totale:mano+matcost,
+    stato:gv('ri-stato'),firma:gv('ri-firma'),note:gv('ri-note')
+  };
+  if(editId){ const i=DB.interventi.findIndex(x=>x.id==editId); if(i>-1) DB.interventi[i]=Object.assign(DB.interventi[i],rec); delete document.getElementById('m-int').dataset.editId; document.getElementById('mt-int').textContent='Rapporto di Intervento'; }
+  else { rec.id=DB.nextId.ri++; DB.interventi.push(rec); }
+  salva();closeM('m-int');
+  clr('ri-addr','ri-desc','ri-mat-note','ri-ore','ri-tariffa','ri-mano','ri-matcost','ri-nota','ri-firma');
+  sv('ri-matcost',''); document.getElementById('ri-tot').textContent='€ 0,00';
+  resetMatRows('ri');renderInt();
+}
+
+function renderInt(){
+  const el=document.getElementById('lista-int');
+  if(!DB.interventi.length){el.innerHTML='<div class="alert ai">Nessun rapporto registrato.</div>';return;}
+  el.innerHTML=[...DB.interventi].reverse().map(r=>`
+    <div class="rib">
+      <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;">
+        <div><div class="rin">RAP-${String(r.id).padStart(4,'0')} — ${r.data||'—'}</div>
+          <div class="ricl">${nC(r.clienteId)||'Cliente n.s.'}</div>
+          <div style="font-size:.75rem;color:var(--grigio);">${r.indirizzo||''}</div>
+        </div>
+        <div class="acts">
+          ${bst(r.stato)}
+          <button class="btn bs btn-sm" onclick="editInt(${r.id})">✏️ Modifica</button>
+          <button class="btn bs btn-sm" onclick="stampaInt(${r.id})">🖨</button>
+          <button class="btn bv btn-sm" onclick="waInt(${r.id})">📲</button>
+          <button class="btn br btn-sm" onclick="delInt(${r.id})">✕</button>
+        </div>
+      </div>
+      <div class="rimeta">
+        <span>⚡ ${r.tipo}</span>
+        <span>⏱ ${r.ore||0}h × €${r.tariffa||0}/h</span>
+        <span>👷 ${eur(r.manodopera)}</span>
+        <span>📦 ${eur(r.costoMat)}</span>
+        <span style="color:var(--giallo);font-weight:700;">TOTALE: ${eur(r.totale||((r.manodopera||0)+(r.costoMat||0)))}</span>
+      </div>
+      <div style="font-size:.8rem;margin-bottom:5px;"><strong>Lavori:</strong> ${r.desc}</div>
+      ${r.matRighe&&r.matRighe.length?`<div style="font-size:.75rem;color:var(--grigio);">Materiali: ${r.matRighe.map(x=>x.desc+' x'+x.qty).join(', ')}</div>`:''}
+      ${r.matNote?`<div style="font-size:.75rem;color:var(--grigio);">${r.matNote}</div>`:''}
+      ${r.note?`<div style="font-size:.75rem;color:var(--grigio);margin-top:3px;"><strong>Note:</strong> ${r.note}</div>`:''}
+      ${r.firma?`<div style="font-size:.75rem;color:var(--verde);margin-top:3px;">✔ Firmato: ${r.firma}</div>`:''}
+    </div>`).join('');
+}
+
+function editInt(id){
+  const r=DB.interventi.find(x=>x.id===id);if(!r)return;
+  fillSelects();
+  document.getElementById('m-int').dataset.editId=id;
+  document.getElementById('mt-int').textContent='✏️ Modifica RAP-'+String(id).padStart(4,'0');
+  sv('ri-data',r.data);sv('ri-cli',r.clienteId);sv('ri-addr',r.indirizzo||'');
+  sv('ri-tipo',r.tipo);sv('ri-desc',r.desc);sv('ri-mat-note',r.matNote||'');
+  sv('ri-ore',r.ore||0);sv('ri-tariffa',r.tariffa||0);sv('ri-mano',r.manodopera||0);
+  sv('ri-matcost',r.costoMat||0);sv('ri-stato',r.stato);sv('ri-firma',r.firma||'');sv('ri-note',r.note||'');
+  const tot=(parseFloat(r.manodopera||0)+parseFloat(r.costoMat||0));
+  document.getElementById('ri-tot').textContent=eur(tot);
+  resetMatRows('ri');
+  document.getElementById('m-int').classList.add('open');
+}
+
+function delInt(id){ if(confirm('Eliminare?')){ DB.interventi=DB.interventi.filter(x=>x.id!==id); salva(); renderInt(); } }
+
+function stampaInt(id){
+  const r=DB.interventi.find(x=>x.id===id);if(!r)return;
+  const imp=getImp();const c=DB.clienti.find(x=>x.id==r.clienteId);
+  const tot=(parseFloat(r.manodopera||0)+parseFloat(r.costoMat||0));
+  const w=window.open('','_blank');
+  const righe=r.matRighe&&r.matRighe.length?r.matRighe.map((m,i)=>`<tr><td>${i+1}</td><td>${m.desc}</td><td>${m.qty}</td><td>${m.um}</td><td>€${parseFloat(m.pvend||0).toFixed(2)}</td><td>€${parseFloat(m.tot||0).toFixed(2)}</td></tr>`).join(''):'';
+  w.document.write(`<!DOCTYPE html><html><head><title>RAP-${String(r.id).padStart(4,'0')}</title><style>body{font-family:Arial,sans-serif;margin:30px;font-size:13px;}table{width:100%;border-collapse:collapse;}td,th{border:1px solid #ccc;padding:6px 10px;}th{background:#eee;}.hdr{display:flex;justify-content:space-between;border-bottom:3px solid #000;padding-bottom:12px;margin-bottom:16px;}.fbox{border:1px solid #999;height:55px;margin-top:6px;}.small{font-size:10px;color:#888;}</style></head><body>
+  <div class="hdr"><div><strong style="font-size:17px;">⚡ ${imp.ragione}</strong><br><span class="small">${imp.addr} – ${imp.cap} ${imp.citta} | P.IVA ${imp.piva} | Tel. ${imp.tel}</span></div>
+  <div style="text-align:right;"><strong>RAPPORTO DI INTERVENTO</strong><br>N° RAP-${String(r.id).padStart(4,'0')}<br>Data: ${r.data||'—'}</div></div>
+  <table style="margin-bottom:14px;"><tr><th>Cliente</th><td>${c?c.nome:'—'}</td><th>Indirizzo</th><td>${r.indirizzo||'—'}</td></tr>
+  <tr><th>Tipo Impianto</th><td>${r.tipo}</td><th>Ore Lavorate</th><td>${r.ore||0}h × €${r.tariffa||0}/h</td></tr>
+  <tr><th>Stato</th><td colspan="3">${r.stato}</td></tr></table>
+  <h3>Lavori Eseguiti</h3><p>${r.desc}</p>
+  ${righe?`<h3>Materiali</h3><table><thead><tr><th>#</th><th>Descrizione</th><th>Qtà</th><th>U.M.</th><th>P.Unit.</th><th>Totale</th></tr></thead><tbody>${righe}</tbody></table>`:''}
+  ${r.matNote?`<p style="font-size:11px;color:#555;">${r.matNote}</p>`:''}
+  ${r.note?`<h3>Note</h3><p>${r.note}</p>`:''}
+  <table style="margin-top:14px;"><tr><th>Manodopera</th><td>€ ${parseFloat(r.manodopera||0).toFixed(2)}</td></tr>
+  <tr><th>Materiali</th><td>€ ${parseFloat(r.costoMat||0).toFixed(2)}</td></tr>
+  <tr><th><strong>TOTALE</strong></th><td><strong>€ ${tot.toFixed(2)}</strong></td></tr></table>
+  <div style="margin-top:28px;display:flex;justify-content:space-between;">
+    <div><div class="small">Firma Tecnico</div><div class="fbox" style="width:180px;"></div><div class="small">${imp.titolare}</div></div>
+    <div><div class="small">Firma Cliente</div><div class="fbox" style="width:180px;"></div><div class="small">${r.firma||'_____________________'}</div></div>
+  </div></body></html>`);
+  w.document.close();w.print();
+}
+
+function waInt(id){
+  const r=DB.interventi.find(x=>x.id===id);if(!r)return;
+  const imp=getImp();const c=DB.clienti.find(x=>x.id==r.clienteId);
+  const tot=(parseFloat(r.manodopera||0)+parseFloat(r.costoMat||0));
+  const t='🔌 *'+imp.ragione+'*\n━━━━━━━━━━━━━━━━━━\n🛠 *RAP-'+String(r.id).padStart(4,'0')+'*\n📅 '+r.data+'\n📍 '+(r.indirizzo||'—')+'\n⚡ '+r.tipo+'\n━━━━━━━━━━━━━━━━━━\n📝 '+r.desc+'\n'+(r.matRighe&&r.matRighe.length?r.matRighe.map(x=>'• '+x.desc+' x'+x.qty).join('\n')+'\n':'')+'\n━━━━━━━━━━━━━━━━━━\n⏱ Ore: '+r.ore+'h × €'+r.tariffa+'/h\n💶 Manodopera: '+eur(r.manodopera)+'\n💶 Materiali: '+eur(r.costoMat)+'\n💶 *TOTALE: '+eur(tot)+'*\n✅ '+r.stato+'\n📞 '+imp.tel;
+  apriWA(c?c.tel:'',t);
+}
+
+// ============ PREVENTIVI ============
+function calcPrev(){ const i=parseFloat(gv('pr-imp'))||0;const v=parseFloat(gv('pr-iva'))||0;sv('pr-tot',(i*(1+v/100)).toFixed(2)); }
+function salvaPrev(){
+  const ogg=gv('pr-ogg').trim();if(!ogg){alert('Inserire oggetto!');return;}
+  const i=parseFloat(gv('pr-imp'))||0;const v=parseFloat(gv('pr-iva'))||0;
+  DB.preventivi.push({id:DB.nextId.pr++,data:gv('pr-data'),validita:gv('pr-val'),clienteId:gv('pr-cli'),oggetto:ogg,desc:gv('pr-desc'),importo:i,iva:v,totale:i*(1+v/100),stato:gv('pr-stato'),note:gv('pr-note')});
+  salva();closeM('m-prev');clr('pr-ogg','pr-desc','pr-imp','pr-tot','pr-note');renderPrev();
+}
+function renderPrev(){
+  const tb=document.getElementById('tb-prev');
+  if(!DB.preventivi.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--grigio);padding:20px;">Nessun preventivo</td></tr>';return;}
+  tb.innerHTML=[...DB.preventivi].reverse().map(p=>`<tr><td><strong>PRV-${String(p.id).padStart(4,'0')}</strong></td><td>${nC(p.clienteId)}</td><td>${p.data||'—'}</td><td>${p.oggetto}</td><td><strong>${eur(p.totale)}</strong></td><td>${bst(p.stato)}</td><td class="acts">
+    <button class="btn bv btn-sm" onclick="waPrev(${p.id})">📲</button>
+    <button class="btn br btn-sm" onclick="delPrev(${p.id})">✕</button></td></tr>`).join('');
+}
+function delPrev(id){ if(confirm('Eliminare?')){ DB.preventivi=DB.preventivi.filter(x=>x.id!==id); salva(); renderPrev(); } }
+function waPrev(id){
+  const p=DB.preventivi.find(x=>x.id===id);if(!p)return;
+  const imp=getImp();const c=DB.clienti.find(x=>x.id==p.clienteId);
+  const t='🔌 *'+imp.ragione+'*\n━━━━━━━━━━━━━━━━━━\n📋 *PREVENTIVO PRV-'+String(p.id).padStart(4,'0')+'*\n📅 '+p.data+'\n⏳ Valido '+p.validita+' giorni\n━━━━━━━━━━━━━━━━━━\n📝 '+p.oggetto+'\n━━━━━━━━━━━━━━━━━━\n💶 Netto: '+eur(p.importo)+'\n💶 *TOTALE: '+eur(p.totale)+'*\n✅ '+p.stato+'\n📞 '+imp.tel;
+  apriWA(c?c.tel:'',t);
+}
+
+// ============ FATTURE ============
+function calcFatt(){
+  const i=parseFloat(gv('fa-imp'))||0;const v=parseFloat(gv('fa-iva'))||0;
+  const tot=i*(1+v/100);sv('fa-tot',tot.toFixed(2));
+  const acc=parseFloat(gv('fa-acc'))||0;const sal=tot-acc;
+  sv('fa-sal',sal.toFixed(2));
+  const se=document.getElementById('fa-sal');
+  if(se) se.style.color=sal<=0?'var(--verde)':'var(--rosso)';
+}
+function salvaFatt(){
+  const desc=gv('fa-desc').trim();if(!desc){alert('Inserire descrizione!');return;}
+  const i=parseFloat(gv('fa-imp'))||0;const v=parseFloat(gv('fa-iva'))||0;
+  const tot=i*(1+v/100);const acc=parseFloat(gv('fa-acc'))||0;
+  DB.fatture.push({id:DB.nextId.fa++,data:gv('fa-data'),scadenza:gv('fa-scad'),clienteId:gv('fa-cli'),desc,imponibile:i,iva:v,totale:tot,acconto:acc,saldo:tot-acc,metodo:gv('fa-met'),stato:gv('fa-stato'),note:gv('fa-note')});
+  salva();closeM('m-fatt');clr('fa-desc','fa-imp','fa-tot','fa-acc','fa-sal','fa-note','fa-scad');renderFatt();
+}
+function renderFatt(){
+  const tb=document.getElementById('tb-fatt');
+  if(!DB.fatture.length){tb.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--grigio);padding:20px;">Nessuna fattura</td></tr>';return;}
+  tb.innerHTML=[...DB.fatture].reverse().map(f=>`<tr>
+    <td><strong>FAT-${String(f.id).padStart(4,'0')}</strong></td>
+    <td>${nC(f.clienteId)}</td><td>${f.data||'—'}</td>
+    <td><strong style="color:var(--giallo)">${eur(f.totale)}</strong></td>
+    <td>${f.acconto?`<span style="color:var(--arancio)">${eur(f.acconto)}</span>`:'—'}</td>
+    <td><strong style="color:${(f.saldo||f.totale)<=0?'var(--verde)':'var(--rosso)'}">${eur(f.saldo!=null?f.saldo:f.totale)}</strong></td>
+    <td style="font-size:.72rem;color:var(--grigio);">${f.metodo||'—'}</td>
+    <td>${bst(f.stato)}</td>
+    <td class="acts">
+      <button class="btn bs btn-sm" onclick="stampaFatt(${f.id})">🖨</button>
+      <button class="btn bv btn-sm" onclick="waFatt(${f.id})">📲</button>
+      <button class="btn br btn-sm" onclick="delFatt(${f.id})">✕</button>
+    </td></tr>`).join('');
+}
+function delFatt(id){ if(confirm('Eliminare?')){ DB.fatture=DB.fatture.filter(x=>x.id!==id); salva(); renderFatt(); } }
+function stampaFatt(id){
+  const f=DB.fatture.find(x=>x.id===id);if(!f)return;
+  const imp=getImp();const c=DB.clienti.find(x=>x.id==f.clienteId);
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>FAT-${String(f.id).padStart(4,'0')}</title><style>body{font-family:Arial,sans-serif;margin:30px;font-size:13px;}table{width:100%;border-collapse:collapse;}td,th{border:1px solid #ccc;padding:6px 10px;}th{background:#eee;}.hdr{display:flex;justify-content:space-between;border-bottom:3px solid #000;padding-bottom:12px;margin-bottom:16px;}.totb{background:#f9f9f9;border:2px solid #000;border-radius:4px;padding:12px;margin-top:14px;text-align:right;}.small{font-size:10px;color:#888;}</style></head><body>
+  <div class="hdr"><div><strong style="font-size:17px;">⚡ ${imp.ragione}</strong><br><span class="small">${imp.addr} – ${imp.cap} ${imp.citta} | P.IVA ${imp.piva} | Tel. ${imp.tel} | ${imp.email}</span><br><span class="small">${imp.regime==='forfettario'?'Regime Forfettario – art.1 c.54-89 L.190/2014':''}</span></div>
+  <div style="text-align:right;"><strong style="font-size:16px;">FATTURA N° FAT-${String(f.id).padStart(4,'0')}</strong><br>Data: ${f.data||'—'}<br>${f.scadenza?'Scadenza: '+f.scadenza+'<br>':''}Pagamento: ${f.metodo||'—'}</div></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+    <div style="border:1px solid #ddd;padding:10px;border-radius:4px;"><div class="small">CLIENTE</div><strong>${c?c.nome:'—'}</strong><br>${c?c.indirizzo+', '+c.citta:''}<br>${c&&c.piva?'P.IVA: '+c.piva:''}</div>
+    <div style="border:1px solid #ddd;padding:10px;border-radius:4px;"><div class="small">PAGAMENTO</div>Metodo: <strong>${f.metodo||'—'}</strong><br>${f.acconto?'Acconto: <strong>'+eur(f.acconto)+'</strong><br>':''}${f.saldo>0?'<span style="color:red">Saldo: <strong>'+eur(f.saldo)+'</strong></span>':''}</div>
+  </div>
+  <table><thead><tr><th>Descrizione</th><th>Imponibile</th></tr></thead><tbody><tr><td>${f.desc}</td><td>€ ${parseFloat(f.imponibile||0).toFixed(2)}</td></tr></tbody></table>
+  <div class="totb">
+    <div>Imponibile: <strong>€ ${parseFloat(f.imponibile||0).toFixed(2)}</strong></div>
+    ${f.iva>0?`<div>IVA ${f.iva}%: <strong>€ ${(f.totale-f.imponibile).toFixed(2)}</strong></div>`:'<div class="small">Operazione in franchigia IVA art.1 c.54-89 L.190/2014</div>'}
+    <div style="font-size:15px;border-top:2px solid #000;padding-top:6px;margin-top:6px;">TOTALE: <strong>€ ${parseFloat(f.totale||0).toFixed(2)}</strong></div>
+    ${f.acconto?`<div style="color:#e67e22;">- Acconto: ${eur(f.acconto)}</div><div style="color:${(f.saldo||0)<=0?'green':'red'};font-weight:700;">SALDO: ${eur(f.saldo)}</div>`:''}
+  </div>
+  ${imp.regime==='forfettario'?'<p style="margin-top:10px;font-size:10px;color:#888;">Operazione effettuata ai sensi dell\'art. 1, commi 54-89, Legge n. 190/2014 – Regime forfettario. Imposta di bollo assolta sull\'originale.</p>':''}
+  ${imp.noteDoc?'<p style="margin-top:8px;font-size:11px;">'+imp.noteDoc+'</p>':''}
+  </body></html>`);
+  w.document.close();w.print();
+}
+function waFatt(id){
+  const f=DB.fatture.find(x=>x.id===id);if(!f)return;
+  const imp=getImp();const c=DB.clienti.find(x=>x.id==f.clienteId);
+  const t='🔌 *'+imp.ragione+'*\n━━━━━━━━━━━━━━━━━━\n🧾 *FAT-'+String(f.id).padStart(4,'0')+'*\n📅 '+f.data+(f.scadenza?'\n⏰ Scadenza: '+f.scadenza:'')+'\n━━━━━━━━━━━━━━━━━━\n📝 '+f.desc+'\n━━━━━━━━━━━━━━━━━━\n💶 Imponibile: '+eur(f.imponibile)+'\n💶 *TOTALE: '+eur(f.totale)+'*\n'+(f.acconto?'✅ Acconto: '+eur(f.acconto)+'\n⚠️ *Saldo: '+eur(f.saldo)+'*\n':'')+'💳 '+f.metodo+'\n📞 '+imp.tel;
+  apriWA(c?c.tel:'',t);
+}
+
+// ============ SOLLECITI ============
+function calcGiorni(){
+  const sc=new Date(gv('so-scad'));const oggi=new Date();oggi.setHours(0,0,0,0);
+  if(!isNaN(sc)){ const d=Math.floor((oggi-sc)/(86400000)); sv('so-giorni',d>0?d:0); }
+}
+function salvaSol(){
+  const cId=gv('so-cli');const imp=parseFloat(gv('so-imp'))||0;
+  if(!cId){alert('Selezionare cliente!');return;}if(!imp){alert('Inserire importo!');return;}
+  const sol={id:DB.nextId.so++,data:gv('so-data'),clienteId:cId,tipo:gv('so-tipo'),fattura:gv('so-fatt'),dataFatt:gv('so-dfatt'),importo:imp,scadenza:gv('so-scad'),giorni:gv('so-giorni'),note:gv('so-note')};
+  DB.solleciti.push(sol);
+  salva();closeM('m-sol');clr('so-fatt','so-imp','so-note','so-giorni','so-dfatt','so-scad');
+  renderSol();stampaSol(sol.id);
+}
+function renderSol(){
+  const tb=document.getElementById('tb-sol');
+  if(!DB.solleciti.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--grigio);padding:20px;">Nessun sollecito</td></tr>';return;}
+  const ti={1:'1° Sollecito',2:'2° Sollecito',3:'3° Diffida'};
+  tb.innerHTML=[...DB.solleciti].reverse().map(s=>`<tr>
+    <td>${s.data||'—'}</td><td>${nC(s.clienteId)}</td><td>${s.fattura||'—'}</td>
+    <td><strong style="color:var(--rosso)">${eur(s.importo)}</strong></td>
+    <td><span class="badge ${s.tipo==3?'br2':'bo'}">${ti[s.tipo]||s.tipo}</span></td>
+    <td class="acts">
+      <button class="btn bs btn-sm" onclick="stampaSol(${s.id})">🖨</button>
+      <button class="btn bv btn-sm" onclick="waSol(${s.id})">📲</button>
+      <button class="btn br btn-sm" onclick="delSol(${s.id})">✕</button>
+    </td></tr>`).join('');
+}
+function delSol(id){ if(confirm('Eliminare?')){ DB.solleciti=DB.solleciti.filter(x=>x.id!==id); salva(); renderSol(); } }
+function stampaSol(id){
+  const s=DB.solleciti.find(x=>x.id===id);if(!s)return;
+  const imp=getImp();const c=DB.clienti.find(x=>x.id==s.clienteId);
+  const oggi=new Date(s.data||Date.now()).toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'});
+  const tipo=parseInt(s.tipo)||1;
+  let ogg='',testo='',chius='';
+  if(tipo===1){
+    ogg='Gentile promemoria pagamento – '+(s.fattura||'fattura');
+    testo=`<p>Con la presente ci permettiamo di ricordarLe che risulta in sospeso il pagamento della ${s.fattura?'fattura n. <strong>'+s.fattura+'</strong>':' fattura'} ${s.dataFatt?'del <strong>'+new Date(s.dataFatt).toLocaleDateString('it-IT')+'</strong>':''} per <strong>€ ${parseFloat(s.importo).toFixed(2)}</strong>${s.giorni>0?', scaduta da <strong>'+s.giorni+' giorni</strong>':''}.</p><p style="margin-top:10px;">La invitiamo a provvedere entro <strong>15 giorni</strong>. Se ha già pagato ignori questa comunicazione.</p>`;
+    chius='Cordiali saluti.';
+  } else if(tipo===2){
+    ogg='Secondo sollecito pagamento – '+(s.fattura||'fattura');
+    testo=`<p>Facendo seguito al precedente sollecito, torniamo a richiedere il pagamento della ${s.fattura?'fattura n. <strong>'+s.fattura+'</strong>':' fattura'} di <strong>€ ${parseFloat(s.importo).toFixed(2)}</strong>, scaduta da <strong>${s.giorni||'diversi'} giorni</strong>.</p><p style="margin-top:10px;">La invitiamo a regolarizzare la posizione entro <strong>10 giorni</strong> per evitare ulteriori provvedimenti.</p>`;
+    chius='Distinti saluti.';
+  } else {
+    ogg='DIFFIDA FORMALE – '+(s.fattura||'fattura');
+    testo=`<p>La <strong>${imp.ragione}</strong> La diffida formalmente a saldare la ${s.fattura?'fattura n. <strong>'+s.fattura+'</strong>':' fattura'} di <strong>€ ${parseFloat(s.importo).toFixed(2)}</strong>, scaduta da <strong>${s.giorni||'numerosi'} giorni</strong>.</p><p style="margin-top:10px;">In mancanza di pagamento entro <strong>7 giorni</strong> procederemo per vie legali con addebito di tutte le spese.</p><p style="margin-top:10px;color:#c0392b;"><strong>Formale messa in mora ai sensi art. 1219 C.C.</strong></p>`;
+    chius='Con riserva di ogni diritto.';
+  }
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>Sollecito</title><style>body{font-family:Arial,sans-serif;margin:40px;font-size:13px;max-width:700px;}p{line-height:1.7;}.hdr{display:flex;justify-content:space-between;border-bottom:3px solid #000;padding-bottom:12px;margin-bottom:20px;}.ogg{background:#f5f5f5;border-left:4px solid #000;padding:10px 14px;margin:20px 0;font-weight:bold;}.fbox{border-bottom:1px solid #999;height:50px;width:180px;display:inline-block;margin-top:8px;}.small{font-size:10px;color:#888;}${tipo===3?'body{border:2px solid #c0392b;}':''}</style></head><body>
+  <div class="hdr"><div><strong style="font-size:17px;">⚡ ${imp.ragione}</strong><br><span class="small">${imp.addr} – ${imp.cap} ${imp.citta} | P.IVA ${imp.piva} | Tel. ${imp.tel}</span></div>
+  <div style="text-align:right;">Castelcivita, <strong>${oggi}</strong><br><strong>${tipo===1?'1°':tipo===2?'2°':'3°'} SOLLECITO</strong></div></div>
+  <div style="margin-bottom:20px;"><strong>${c?c.nome:'Spettabile Cliente'}</strong>${c&&c.indirizzo?'<br>'+c.indirizzo+', '+c.citta:''}</div>
+  <div class="ogg">Oggetto: ${ogg}</div>
+  <p>Gentile ${c?c.nome:'Cliente'},</p>
+  <div style="margin-top:12px;">${testo}</div>
+  ${s.note?'<p style="margin-top:12px;font-style:italic;">'+s.note+'</p>':''}
+  <p style="margin-top:18px;">${chius}</p>
+  <div style="margin-top:36px;"><p>Cordialmente,</p><br><strong>${imp.titolare}</strong><br><span class="small">${imp.ragione}</span><br><div class="fbox"></div></div>
+  </body></html>`);
+  w.document.close();w.print();
+}
+function waSol(id){
+  const s=DB.solleciti.find(x=>x.id===id);if(!s)return;
+  const imp=getImp();const c=DB.clienti.find(x=>x.id==s.clienteId);
+  const tipo=parseInt(s.tipo)||1;
+  const toni=['','Gentile promemoria: risulta in sospeso il pagamento della','Secondo sollecito: è necessario provvedere urgentemente al pagamento della','⚠️ DIFFIDA FORMALE – Saldare immediatamente la'];
+  const t='🔌 *'+imp.ragione+'*\n━━━━━━━━━━━━━━━━━━\n📬 *'+tipo+'° SOLLECITO*\n━━━━━━━━━━━━━━━━━━\n'+toni[tipo]+'\n'+(s.fattura?'📄 *'+s.fattura+'*\n':'')+'💶 *€ '+parseFloat(s.importo).toFixed(2)+'*\n'+(s.scadenza?'⏰ Scadenza: '+s.scadenza+'\n':'')+(s.giorni>0?'⚠️ Ritardo: '+s.giorni+' giorni\n':'')+(s.note?s.note+'\n':'')+'━━━━━━━━━━━━━━━━━━\n📞 '+imp.tel+'\n✉️ '+imp.email;
+  apriWA(c?c.tel:'',t);
+}
+
+// ============ DDT ============
+function salvaDDT(){
+  const cId=gv('dd-cli');if(!cId){alert('Selezionare cliente!');return;}
+  DB.ddt.push({id:DB.nextId.dd++,data:gv('dd-data'),causale:gv('dd-caus'),clienteId:cId,dest:gv('dd-dest'),colli:gv('dd-colli'),peso:gv('dd-peso'),vettore:gv('dd-vett'),aspetto:gv('dd-asp'),desc:gv('dd-desc'),ora:gv('dd-ora'),stato:gv('dd-stato'),note:gv('dd-note')});
+  salva();closeM('m-ddt');clr('dd-dest','dd-colli','dd-peso','dd-vett','dd-desc','dd-ora','dd-note');renderDDT();
+}
+function renderDDT(){
+  const tb=document.getElementById('tb-ddt');
+  if(!DB.ddt.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--grigio);padding:20px;">Nessun DDT</td></tr>';return;}
+  tb.innerHTML=[...DB.ddt].reverse().map(d=>`<tr>
+    <td><strong>DDT-${String(d.id).padStart(4,'0')}</strong></td>
+    <td>${d.data||'—'}</td><td>${nC(d.clienteId)}</td>
+    <td><span class="badge ba2">${d.causale}</span></td>
+    <td>${d.colli||0}</td><td>${bst(d.stato)}</td>
+    <td class="acts">
+      <button class="btn bs btn-sm" onclick="stampaDDT(${d.id})">🖨</button>
+      <button class="btn bv btn-sm" onclick="waDDT(${d.id})">📲</button>
+      <button class="btn br btn-sm" onclick="delDDT(${d.id})">✕</button>
+    </td></tr>`).join('');
+}
+function delDDT(id){ if(confirm('Eliminare?')){ DB.ddt=DB.ddt.filter(x=>x.id!==id); salva(); renderDDT(); } }
+function stampaDDT(id){
+  const d=DB.ddt.find(x=>x.id===id);if(!d)return;
+  const imp=getImp();const c=DB.clienti.find(x=>x.id==d.clienteId);
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>DDT-${String(d.id).padStart(4,'0')}</title><style>body{font-family:Arial,sans-serif;margin:30px;font-size:13px;}table{width:100%;border-collapse:collapse;}td,th{border:1px solid #ccc;padding:6px 10px;}th{background:#eee;}.hdr{display:flex;justify-content:space-between;border-bottom:3px solid #000;padding-bottom:12px;margin-bottom:16px;}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}.box{border:1px solid #ddd;padding:10px;border-radius:4px;}.fbox{border:1px solid #999;height:55px;margin-top:6px;}.small{font-size:10px;color:#888;}</style></head><body>
+  <div class="hdr"><div><strong style="font-size:17px;">⚡ ${imp.ragione}</strong><br><span class="small">${imp.addr} – ${imp.cap} ${imp.citta} | P.IVA ${imp.piva}</span></div>
+  <div style="text-align:right;"><strong style="font-size:16px;">DOCUMENTO DI TRASPORTO</strong><br>N° DDT-${String(d.id).padStart(4,'0')}<br>Data: ${d.data||'—'} ${d.ora?'ore '+d.ora:''}</div></div>
+  <div class="grid">
+    <div class="box"><div class="small">MITTENTE</div><strong>${imp.ragione}</strong><br>${imp.addr}<br>${imp.cap} ${imp.citta}</div>
+    <div class="box"><div class="small">DESTINATARIO</div><strong>${c?c.nome:'—'}</strong><br>${d.dest||(c?c.indirizzo+', '+c.citta:'—')}</div>
+    <div class="box"><div class="small">CAUSALE</div>${d.causale}</div>
+    <div class="box"><div class="small">VETTORE</div>${d.vettore||'Mittente'}</div>
+    <div class="box"><div class="small">COLLI / PESO</div>${d.colli||0} colli – ${d.peso||0} kg</div>
+    <div class="box"><div class="small">ASPETTO BENI</div>${d.aspetto}</div>
+  </div>
+  <table><thead><tr><th>Descrizione Merce</th></tr></thead><tbody><tr><td style="min-height:80px;">${d.desc||'—'}</td></tr></tbody></table>
+  ${d.note?'<p style="margin-top:10px;font-size:11px;">Note: '+d.note+'</p>':''}
+  <div style="margin-top:28px;display:flex;justify-content:space-between;">
+    <div><div class="small">Firma Mittente</div><div class="fbox" style="width:170px;"></div><div class="small">${imp.titolare}</div></div>
+    <div><div class="small">Firma Vettore</div><div class="fbox" style="width:170px;"></div></div>
+    <div><div class="small">Firma Destinatario</div><div class="fbox" style="width:170px;"></div><div class="small">${c?c.nome:''}</div></div>
+  </div></body></html>`);
+  w.document.close();w.print();
+}
+function waDDT(id){
+  const d=DB.ddt.find(x=>x.id===id);if(!d)return;
+  const imp=getImp();const c=DB.clienti.find(x=>x.id==d.clienteId);
+  const t='🔌 *'+imp.ragione+'*\n━━━━━━━━━━━━━━━━━━\n🚚 *DDT-'+String(d.id).padStart(4,'0')+'*\n📅 '+d.data+(d.ora?' ore '+d.ora:'')+'\n📦 Causale: '+d.causale+'\n📍 Destinazione: '+(d.dest||'Sede cliente')+'\n📫 Colli: '+d.colli+' – Peso: '+d.peso+' kg\n━━━━━━━━━━━━━━━━━━\n'+d.desc+'\n━━━━━━━━━━━━━━━━━━\n✅ '+d.stato+'\n📞 '+imp.tel;
+  apriWA(c?c.tel:'',t);
+}
+
+// ============ ENTRATE ============
+function salvaEntr(){
+  const desc=gv('en-desc').trim();if(!desc){alert('Inserire descrizione!');return;}
+  DB.entrate.push({id:DB.nextId.en++,data:gv('en-data'),importo:parseFloat(gv('en-imp'))||0,desc,cat:gv('en-cat'),note:gv('en-note')});
+  salva();closeM('m-entr');clr('en-desc','en-imp','en-note');renderEntr();
+}
+function renderEntr(){
+  const tb=document.getElementById('tb-entr');
+  if(!DB.entrate.length){tb.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--grigio);padding:20px;">Nessuna entrata</td></tr>';return;}
+  tb.innerHTML=[...DB.entrate].reverse().map(e=>`<tr><td>${e.data||'—'}</td><td>${e.desc}</td><td><span class="badge bg">${e.cat}</span></td><td><strong style="color:var(--verde)">${eur(e.importo)}</strong></td><td><button class="btn br btn-sm" onclick="delEntr(${e.id})">✕</button></td></tr>`).join('');
+}
+function delEntr(id){ if(confirm('Eliminare?')){ DB.entrate=DB.entrate.filter(x=>x.id!==id); salva(); renderEntr(); } }
+
+// ============ SPESE ============
+function salvaSpesa(){
+  const desc=gv('sp-desc').trim();if(!desc){alert('Inserire descrizione!');return;}
+  DB.spese.push({id:DB.nextId.sp++,data:gv('sp-data'),importo:parseFloat(gv('sp-imp'))||0,desc,cat:gv('sp-cat'),note:gv('sp-note')});
+  salva();closeM('m-spesa');clr('sp-desc','sp-imp','sp-note');renderSpesa();
+}
+function renderSpesa(){
+  const tb=document.getElementById('tb-spesa');
+  if(!DB.spese.length){tb.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--grigio);padding:20px;">Nessuna spesa</td></tr>';return;}
+  tb.innerHTML=[...DB.spese].reverse().map(s=>`<tr><td>${s.data||'—'}</td><td>${s.desc}</td><td><span class="badge bo">${s.cat}</span></td><td><strong style="color:var(--rosso)">${eur(s.importo)}</strong></td><td><button class="btn br btn-sm" onclick="delSpesa(${s.id})">✕</button></td></tr>`).join('');
+}
+function delSpesa(id){ if(confirm('Eliminare?')){ DB.spese=DB.spese.filter(x=>x.id!==id); salva(); renderSpesa(); } }
+
+// ============ PRIMA NOTA ============
+function salvaPN(){
+  const desc=gv('pn-desc').trim();if(!desc){alert('Inserire descrizione!');return;}
+  const dare=parseFloat(gv('pn-dare-v'))||0;const avere=parseFloat(gv('pn-avere-v'))||0;
+  if(!dare&&!avere){alert('Inserire importo dare o avere!');return;}
+  DB.primanota.push({id:DB.nextId.pn++,data:gv('pn-data'),tipo:gv('pn-tipo'),desc,conto:gv('pn-conto'),causale:gv('pn-caus'),dare,avere,note:gv('pn-note')});
+  salva();closeM('m-pn');clr('pn-desc','pn-dare-v','pn-avere-v','pn-note');renderPN();
+}
+function renderPN(){
+  const el=document.getElementById('pn-mese');
+  let recs=[...DB.primanota].sort((a,b)=>new Date(a.data)-new Date(b.data));
+  if(el&&el.value){ const[y,m]=el.value.split('-'); recs=recs.filter(r=>{ const d=new Date(r.data);return d.getFullYear()==y&&(d.getMonth()+1)==m;}); }
+  let td=0,ta=0,sp=0;
+  recs.forEach(r=>{td+=r.dare||0;ta+=r.avere||0;});
+  document.getElementById('pn-dare').textContent=eur(td);
+  document.getElementById('pn-avere').textContent=eur(ta);
+  const sal=td-ta;const se=document.getElementById('pn-saldo');
+  se.textContent=eur(sal);se.style.color=sal>=0?'var(--verde)':'var(--rosso)';
+  const tb=document.getElementById('tb-pn');
+  if(!recs.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--grigio);padding:20px;">Nessuna registrazione</td></tr>';return;}
+  tb.innerHTML=recs.map(r=>{ sp+=(r.dare||0)-(r.avere||0);return`<tr>
+    <td>${r.data||'—'}</td><td>${r.desc}</td><td><span class="badge ba2">${r.conto}</span></td>
+    <td style="font-size:.72rem;color:var(--grigio);">${r.causale}</td>
+    <td style="color:var(--verde);">${r.dare?eur(r.dare):'—'}</td>
+    <td style="color:var(--rosso);">${r.avere?eur(r.avere):'—'}</td>
+    <td style="color:${sp>=0?'var(--verde)':'var(--rosso)'};font-weight:700;">${eur(sp)}</td>
+    <td><button class="btn br btn-sm" onclick="delPN(${r.id})">✕</button></td></tr>`;}).join('');
+}
+function delPN(id){ if(confirm('Eliminare?')){ DB.primanota=DB.primanota.filter(x=>x.id!==id); salva(); renderPN(); } }
+function exportPN(){
+  const rows=[['Data','Descrizione','Conto','Causale','Dare','Avere'],...DB.primanota.map(r=>[r.data,r.desc,r.conto,r.causale,r.dare||0,r.avere||0])];
+  dlFile('\uFEFF'+rows.map(r=>r.join(',')).join('\n'),'prima-nota.csv','text/csv');
+}
+
+// ============ SCADENZARIO ============
+function salvaScad(){
+  const desc=gv('sc-desc').trim();const scad=gv('sc-scad');
+  if(!desc||!scad){alert('Inserire descrizione e data!');return;}
+  DB.scadenzario.push({id:DB.nextId.sc++,desc,tipo:gv('sc-tipo'),importo:parseFloat(gv('sc-imp'))||0,scad,metodo:gv('sc-met'),stato:gv('sc-stato'),note:gv('sc-note')});
+  salva();closeM('m-scad');clr('sc-desc','sc-imp','sc-scad','sc-note');renderScad();
+}
+function renderScad(){
+  const oggi=new Date();oggi.setHours(0,0,0,0);
+  const tra7=new Date(oggi);tra7.setDate(tra7.getDate()+7);
+  const n=new Date();const m=n.getMonth();const y=n.getFullYear();
+  let nSc=0,n7=0,nOk=0;
+  const sorted=[...DB.scadenzario].sort((a,b)=>new Date(a.scad)-new Date(b.scad));
+  sorted.forEach(s=>{ const d=new Date(s.scad);d.setHours(0,0,0,0);
+    if(s.stato==='pagata'){if(d.getMonth()===m&&d.getFullYear()===y)nOk++;}
+    else if(d<oggi)nSc++; else if(d<=tra7)n7++;
+  });
+  document.getElementById('sc-sc').textContent=nSc;
+  document.getElementById('sc-7').textContent=n7;
+  document.getElementById('sc-ok').textContent=nOk;
+  // badge nav
+  const nav=document.getElementById('nav-scad');
+  const existing=nav.querySelector('.badge');
+  if(existing)existing.remove();
+  if(nSc+n7>0){ const b=document.createElement('span');b.className='badge';b.textContent=nSc+n7;nav.appendChild(b); }
+  const tb=document.getElementById('tb-scad');
+  if(!sorted.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--grigio);padding:20px;">Nessuna scadenza</td></tr>';return;}
+  tb.innerHTML=sorted.map(s=>{
+    const d=new Date(s.scad);d.setHours(0,0,0,0);
+    const diff=Math.round((d-oggi)/86400000);
+    let gl='',rc='';
+    if(s.stato==='pagata'){ gl='<span class="badge bg">Pagata</span>'; }
+    else if(diff<0){ gl=`<span class="badge br2">${Math.abs(diff)}gg scad.</span>`;rc='background:rgba(231,76,60,.05);'; }
+    else if(diff===0){ gl='<span class="badge bo">Oggi!</span>'; }
+    else if(diff<=7){ gl=`<span class="badge bo">${diff}gg</span>`; }
+    else gl=`<span style="color:var(--grigio);font-size:.75rem;">${diff}gg</span>`;
+    return`<tr style="${rc}">
+      <td>${s.desc}</td>
+      <td>${s.tipo==='incasso'?'💰 Incasso':'💸 Pagamento'}</td>
+      <td><strong style="color:${s.tipo==='incasso'?'var(--verde)':'var(--rosso)'}">${eur(s.importo)}</strong></td>
+      <td>${s.scad}</td><td>${gl}</td>
+      <td style="font-size:.75rem;">${s.metodo}</td>
+      <td>${s.stato==='pagata'?'<span class="badge bg">Pagata</span>':'<span class="badge bo">Da pagare</span>'}</td>
+      <td class="acts">
+        ${s.stato!=='pagata'?`<button class="btn bv btn-sm" onclick="pagaScad(${s.id})">✔ Pagata</button>`:''}
+        <button class="btn br btn-sm" onclick="delScad(${s.id})">✕</button>
+      </td></tr>`;
+  }).join('');
+}
+function pagaScad(id){ const s=DB.scadenzario.find(x=>x.id===id);if(s){s.stato='pagata';salva();renderScad();} }
+function delScad(id){ if(confirm('Eliminare?')){ DB.scadenzario=DB.scadenzario.filter(x=>x.id!==id); salva(); renderScad(); } }
+
+// ============ MAGAZZINO ============
+function calcMagNetto(){
+  const n=parseFloat(gv('mg-netto'))||0;const v=parseFloat(gv('mg-iva'))||0;
+  sv('mg-lordo',(n*(1+v/100)).toFixed(2));
+  calcMagVendita();
+}
+function calcMagLordo(){
+  const l=parseFloat(gv('mg-lordo'))||0;const v=parseFloat(gv('mg-iva'))||0;
+  sv('mg-netto',(v>0?l/(1+v/100):l).toFixed(2));
+  calcMagVendita();
+}
+function calcMagVendita(){
+  const l=parseFloat(gv('mg-lordo'))||0;const n=parseFloat(gv('mg-netto'))||0;
+  const v=parseFloat(gv('mg-iva'))||0;const r=parseFloat(gv('mg-ric'))||0;
+  const vend=l*(1+r/100);const marg=vend-l;
+  sv('mg-vend',vend.toFixed(2));sv('mg-marg',marg.toFixed(2));
+  const el=document.getElementById('mg-rie');
+  if(el&&l>0) el.innerHTML=`Netto: <b style="color:var(--bianco)">€${n.toFixed(2)}</b> + IVA ${v}% = <b style="color:var(--accent)">€${l.toFixed(2)}</b> + Ricarico ${r}% = <b style="color:var(--giallo)">€${vend.toFixed(2)}</b> (margine <b style="color:var(--verde)">€${marg.toFixed(2)}</b>)`;
+}
+function calcMagRic(){
+  const l=parseFloat(gv('mg-lordo'))||0;const vend=parseFloat(gv('mg-vend'))||0;
+  if(l>0){ sv('mg-ric',(((vend-l)/l)*100).toFixed(1));sv('mg-marg',(vend-l).toFixed(2)); }
+}
+function salvaMag(){
+  const desc=gv('mg-desc').trim();if(!desc){alert('Inserire descrizione!');return;}
+  const l=parseFloat(gv('mg-lordo'))||0;if(!l){alert('Inserire prezzo acquisto!');return;}
+  const editId=document.getElementById('m-mag').dataset.editId;
+  const r={id:editId?parseInt(editId):DB.nextId.mg++,codice:gv('mg-cod'),cat:gv('mg-cat'),desc,qta:parseFloat(gv('mg-qta'))||0,um:gv('mg-um'),netto:parseFloat(gv('mg-netto'))||0,iva:parseFloat(gv('mg-iva'))||0,lordo:l,ricarico:parseFloat(gv('mg-ric'))||0,pvend:parseFloat(gv('mg-vend'))||0,margine:parseFloat(gv('mg-marg'))||0,note:gv('mg-note')};
+  if(editId){ const i=DB.magazzino.findIndex(x=>x.id==editId);if(i>-1)DB.magazzino[i]=r;delete document.getElementById('m-mag').dataset.editId;document.getElementById('mt-mag').textContent='Nuovo Articolo'; }
+  else DB.magazzino.push(r);
+  salva();closeM('m-mag');clr('mg-cod','mg-desc','mg-qta','mg-netto','mg-lordo','mg-ric','mg-vend','mg-marg','mg-note');
+  const re=document.getElementById('mg-rie');if(re)re.textContent='';
+  renderMag();
+}
+function renderMag(){
+  const tb=document.getElementById('tb-mag');
+  if(!DB.magazzino.length){tb.innerHTML='<tr><td colspan="12" style="text-align:center;color:var(--grigio);padding:20px;">Nessun articolo</td></tr>';return;}
+  tb.innerHTML=DB.magazzino.map(m=>`<tr>
+    <td>${m.codice||'—'}</td><td><strong>${m.desc}</strong></td>
+    <td><span class="badge ba2">${m.cat}</span></td>
+    <td><strong style="color:${m.qta<=0?'var(--rosso)':'var(--verde)'}">${m.qta}</strong></td>
+    <td>${m.um}</td>
+    <td>€${parseFloat(m.netto||0).toFixed(2)}</td>
+    <td>${m.iva||0}%</td>
+    <td>€${parseFloat(m.lordo||0).toFixed(2)}</td>
+    <td><span style="color:var(--arancio);">${m.ricarico||0}%</span></td>
+    <td><strong style="color:var(--giallo);">€${parseFloat(m.pvend||0).toFixed(2)}</strong></td>
+    <td><span style="color:var(--verde);">€${parseFloat(m.margine||0).toFixed(2)}</span></td>
+    <td class="acts">
+      <button class="btn bs btn-sm" onclick="editMag(${m.id})">✏️</button>
+      <button class="btn br btn-sm" onclick="delMag(${m.id})">✕</button>
+    </td></tr>`).join('');
+}
+function editMag(id){
+  const m=DB.magazzino.find(x=>x.id===id);if(!m)return;
+  document.getElementById('m-mag').dataset.editId=id;
+  document.getElementById('mt-mag').textContent='✏️ Modifica Articolo';
+  sv('mg-cod',m.codice);sv('mg-cat',m.cat);sv('mg-desc',m.desc);sv('mg-qta',m.qta);sv('mg-um',m.um);
+  sv('mg-netto',m.netto||0);sv('mg-iva',m.iva||22);sv('mg-lordo',m.lordo||0);
+  sv('mg-ric',m.ricarico||0);sv('mg-vend',m.pvend||0);sv('mg-marg',m.margine||0);sv('mg-note',m.note||'');
+  openM('m-mag');
+}
+function delMag(id){ if(confirm('Eliminare?')){ DB.magazzino=DB.magazzino.filter(x=>x.id!==id); salva(); renderMag(); } }
+
+// ============ SCANNER ============
+let scanPrefix='ri';let scanArt=null;let scanStream=null;let zx=null;
+async function scanCode(prefix){
+  scanPrefix=prefix;scanArt=null;
+  sv('scan-manual','');
+  document.getElementById('scan-res').style.display='none';
+  document.getElementById('btn-add-scan').style.display='none';
+  document.getElementById('scan-st').textContent='Avvio fotocamera...';
+  document.getElementById('m-scan').classList.add('open');
+  try{
+    scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    const v=document.getElementById('scan-video');v.srcObject=scanStream;await v.play();
+    document.getElementById('scan-st').textContent='Punta verso il codice...';
+    if(!zx){ const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/zxing-js/0.20.0/zxing.min.js';
+      s.onload=()=>{ try{zx=new ZXing.BrowserMultiFormatReader();zx.decodeFromVideoDevice(null,'scan-video',(r,e)=>{if(r){zx.reset();onScan(r.getText());}});}catch(e){} };
+      document.head.appendChild(s);
+    } else { try{zx.decodeFromVideoDevice(null,'scan-video',(r,e)=>{if(r){zx.reset();onScan(r.getText());}});}catch(e){} }
+  }catch(e){ document.getElementById('scan-st').textContent='Fotocamera non disponibile. Usa campo manuale.'; }
+}
+function onScan(code){
+  document.getElementById('scan-st').textContent='✔ Codice: '+code;
+  document.getElementById('scan-code').textContent=code;
+  document.getElementById('scan-res').style.display='block';
+  sv('scan-manual',code);
+  const art=DB.magazzino.find(m=>(m.codice&&m.codice.toLowerCase()===code.toLowerCase())||m.desc.toLowerCase().includes(code.toLowerCase()));
+  const mel=document.getElementById('scan-match');
+  if(art){ scanArt=art;mel.innerHTML=`<span style="color:var(--verde)">✔ ${art.desc}</span><br><span style="font-size:.75rem;color:var(--grigio)">Stock: ${art.qta} ${art.um} | Vendita: ${eur(art.pvend)}</span>`;document.getElementById('btn-add-scan').style.display='flex'; }
+  else { scanArt=null;mel.innerHTML=`<span style="color:var(--arancio)">Non trovato in magazzino.</span>`; }
+}
+function cercaCodice(){ const c=gv('scan-manual').trim();if(c)onScan(c); }
+function addDaScan(){
+  if(!scanArt)return;
+  addMatRow(scanPrefix);
+  setTimeout(()=>{
+    const rows=document.getElementById(scanPrefix+'-mat-rows').querySelectorAll('div[id]');
+    const last=rows[rows.length-1];
+    if(last){ const sel=last.querySelector('select');if(sel){ Array.from(sel.options).forEach(o=>{if(o.value==scanArt.id)sel.value=o.value;});onMatSel(sel,scanPrefix,last.id); } }
+  },100);
+  closeScan();
+}
+function closeScan(){
+  if(scanStream)scanStream.getTracks().forEach(t=>t.stop());
+  if(zx){try{zx.reset();}catch(e){}}
+  document.getElementById('m-scan').classList.remove('open');
+}
+
+// ============ IMPORT/EXPORT ============
+function dlFile(data,name,type){ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;a.click(); }
+function toCSV(rows){ return rows.map(r=>r.map(c=>{ const s=String(c||'').replace(/"/g,'""');return s.includes(',')||s.includes('"')?'"'+s+'"':s;}).join(',')).join('\n'); }
+function expAll(){
+  let csv='NUOVA ELETTRA – EXPORT\n\n=== CLIENTI ===\n'+toCSV([['Nome','P.IVA','Tel','Email','Città'],...DB.clienti.map(c=>[c.nome,c.piva,c.tel,c.email,c.citta])])+'\n\n=== FATTURE ===\n'+toCSV([['N°','Data','Cliente','Totale','Acconto','Saldo','Stato'],...DB.fatture.map(f=>['FAT-'+String(f.id).padStart(4,'0'),f.data,nC(f.clienteId),f.totale,f.acconto||0,f.saldo||f.totale,f.stato])])+'\n\n=== SPESE ===\n'+toCSV([['Data','Descrizione','Categoria','Importo'],...DB.spese.map(s=>[s.data,s.desc,s.cat,s.importo])]);
+  dlFile('\uFEFF'+csv,'export-nuova-elettra.csv','text/csv');
+}
+function expClienti(){ dlFile('\uFEFF'+toCSV([['nome','piva','tel','email','indirizzo','citta','cap'],...DB.clienti.map(c=>[c.nome,c.piva,c.tel,c.email,c.indirizzo,c.citta,c.cap])]),'clienti.csv','text/csv'); }
+function expFatture(){ dlFile('\uFEFF'+toCSV([['numero','data','cliente','imponibile','iva','totale','acconto','saldo','stato'],...DB.fatture.map(f=>['FAT-'+String(f.id).padStart(4,'0'),f.data,nC(f.clienteId),f.imponibile,f.iva+'%',f.totale,f.acconto||0,f.saldo||f.totale,f.stato])]),'fatture.csv','text/csv'); }
+function expJSON(){ dlFile(JSON.stringify(DB,null,2),'backup-nuova-elettra-'+new Date().toISOString().split('T')[0]+'.json','application/json'); }
+function impJSON(input){
+  const f=input.files[0];if(!f)return;
+  if(!confirm('Sovrascrivere tutti i dati attuali?'))return;
+  const r=new FileReader();r.onload=e=>{ try{Object.assign(DB,JSON.parse(e.target.result));fixDB();salva();renderAll();alert('✔ Backup ripristinato!');}catch(ex){alert('Errore file JSON');} };r.readAsText(f);
+}
+function impClientiCSV(input){
+  const f=input.files[0];if(!f)return;
+  const r=new FileReader();r.onload=e=>{
+    const lines=e.target.result.trim().split('\n');const h=lines[0].split(',').map(x=>x.trim().replace(/^"|"$/g,'').toLowerCase());
+    let n=0;
+    lines.slice(1).forEach(line=>{ const v=line.split(',').map(x=>x.trim().replace(/^"|"$/g,''));const o={};h.forEach((k,i)=>o[k]=v[i]||'');
+      if(o.nome){DB.clienti.push({id:DB.nextId.cl++,nome:o.nome,piva:o.piva||'',tel:o.tel||o.telefono||'',email:o.email||'',indirizzo:o.indirizzo||'',citta:o.citta||'',cap:o.cap||''});n++;}
+    });
+    salva();alert('✔ Importati '+n+' clienti!');
+  };r.readAsText(f,'UTF-8');
+}
+
+// ============ IMPOSTAZIONI ============
+function caricaImp(){
+  const d=DB.impostazioni||{};
+  sv('imp-rag',d.ragione||'Nuova Elettra di Verlotta Renato');sv('imp-tit',d.titolare||'Verlotta Renato');
+  sv('imp-piva',d.piva||'06011580658');sv('imp-cf',d.cf||'VRLRNT65C18C069G');
+  sv('imp-addr',d.addr||'Contrada Cosentini I 54');sv('imp-cap',d.cap||'84020');sv('imp-cit',d.citta||'Castelcivita (SA)');
+  sv('imp-tel',d.tel||'347 0653520');sv('imp-email',d.email||'renatoverlotta@virgilio.it');
+  sv('imp-pec',d.pec||'verlottarenato@pec.it');sv('imp-rea',d.rea||'SA - 490482');
+  sv('imp-reg',d.regime||'forfettario');sv('imp-tariffa',d.tariffa||30);sv('imp-note',d.noteDoc||'');
+}
+function salvaImp(){
+  DB.impostazioni={ragione:gv('imp-rag'),titolare:gv('imp-tit'),piva:gv('imp-piva'),cf:gv('imp-cf'),addr:gv('imp-addr'),cap:gv('imp-cap'),citta:gv('imp-cit'),tel:gv('imp-tel'),email:gv('imp-email'),pec:gv('imp-pec'),rea:gv('imp-rea'),regime:gv('imp-reg'),tariffa:parseFloat(gv('imp-tariffa'))||30,noteDoc:gv('imp-note')};
+  salva();
+  // aggiorna sidebar
+  const imp=DB.impostazioni;
+  document.querySelector('.logo-n').textContent='⚡ '+imp.ragione.split(' di ')[0];
+  document.querySelector('.logo-s').textContent='di '+imp.titolare;
+  const ok=document.getElementById('imp-ok');ok.style.display='inline';setTimeout(()=>ok.style.display='none',2500);
+}
+
+// ============ WHATSAPP ============
+function apriWA(tel,testo){ const n=tel?(tel+'').replace(/\D/g,''):'';const u=n?'https://wa.me/39'+n+'?text='+encodeURIComponent(testo):'https://wa.me/?text='+encodeURIComponent(testo);window.open(u,'_blank'); }
+
+// ============ DASHBOARD ============
+function renderDash(){
+  const n=new Date();const m=n.getMonth();const y=n.getFullYear();
+  document.getElementById('s-cli').textContent=DB.clienti.length;
+  document.getElementById('s-int').textContent=DB.interventi.length;
+  const fatM=DB.fatture.filter(f=>{if(!f.data)return false;const d=new Date(f.data);return d.getMonth()===m&&d.getFullYear()===y;}).reduce((a,f)=>a+f.totale,0);
+  const spM=DB.spese.filter(s=>{if(!s.data)return false;const d=new Date(s.data);return d.getMonth()===m&&d.getFullYear()===y;}).reduce((a,s)=>a+s.importo,0);
+  const enM=DB.entrate.filter(e=>{if(!e.data)return false;const d=new Date(e.data);return d.getMonth()===m&&d.getFullYear()===y;}).reduce((a,e)=>a+e.importo,0);
+  document.getElementById('s-fat').textContent=eur(fatM);
+  document.getElementById('s-sp').textContent=eur(spM);
+  document.getElementById('d-en').textContent=eur(enM);
+  document.getElementById('d-usc').textContent=eur(spM);
+  const sal=enM-spM;const se=document.getElementById('d-sal');
+  se.textContent=eur(sal);se.style.color=sal>=0?'var(--verde)':'var(--rosso)';
+  const ti=document.getElementById('d-int');
+  const li=[...DB.interventi].slice(-5).reverse();
+  ti.innerHTML=li.length?li.map(r=>`<tr><td>RAP-${String(r.id).padStart(4,'0')}</td><td>${nC(r.clienteId)}</td><td>${r.data||'—'}</td><td>${bst(r.stato)}</td></tr>`).join(''):'<tr><td colspan="4" style="text-align:center;color:var(--grigio);">Nessuno</td></tr>';
+  const tf=document.getElementById('d-fat');
+  const lf=[...DB.fatture].slice(-5).reverse();
+  tf.innerHTML=lf.length?lf.map(f=>`<tr><td>FAT-${String(f.id).padStart(4,'0')}</td><td>${nC(f.clienteId)}</td><td>${eur(f.totale)}</td><td>${bst(f.stato)}</td></tr>`).join(''):'<tr><td colspan="4" style="text-align:center;color:var(--grigio);">Nessuna</td></tr>';
+}
+
+function renderAll(){ renderDash(); }
+
+// ============ INIT ============
+document.getElementById('tdate').textContent=new Date().toLocaleDateString('it-IT',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+const pmese=document.getElementById('pn-mese');
+if(pmese){ const n=new Date();pmese.value=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0'); }
+
+// Imposta tariffa default dal magazzino impostazioni
+document.addEventListener('DOMContentLoaded',()=>{
+  const t=getImp().tariffa;
+  if(t) sv('ri-tariffa',t);
+});
+
+// Prima carica dal localStorage per velocità
+loadDB();
+
+// Nascondi loading e mostra app  
+document.getElementById('loading').style.display='none';
+renderDash();
+
+// Sync cloud SUBITO — carica dati aggiornati dal cloud
+syncCloud();
+
+// Alert scadenze
+setTimeout(()=>{
+  if(!DB.scadenzario||!DB.scadenzario.length)return;
+  const oggi=new Date();oggi.setHours(0,0,0,0);
+  const tra3=new Date(oggi);tra3.setDate(tra3.getDate()+3);
+  const urg=DB.scadenzario.filter(s=>{ if(s.stato==='pagata')return false;const d=new Date(s.scad);d.setHours(0,0,0,0);return d<=tra3;});
+  if(urg.length){ const nav=document.getElementById('nav-scad');const b=document.createElement('span');b.className='badge';b.textContent=urg.length;nav.appendChild(b); }
+},600);
+</script>
+</body>
+</html>
